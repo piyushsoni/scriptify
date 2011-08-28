@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+    <Description about="urn:mozilla:install-manifest"
+        em:id="scriptify@dactyl.googlecode.com"
+        em:name="scriptify"
+        em:type="2"
+        em:version="0.1"
+        em:description="A simple user script to extension stub"
+        em:creator="Kris Maglione"
+        em:bootstrap="true">
+
+        <!-- Firefox -->
+        <em:targetApplication>
+            <Description
+                em:id="{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+                em:minVersion="4.0"
+                em:maxVersion="9.0a1"/>
+        </em:targetApplication>
+    </Description>
+</RDF>
+
+<!-- vim: set fdm=marker sw=4 ts=4 et: -->
