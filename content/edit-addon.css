@@ -1,0 +1,36 @@
+
+scriptify-label {
+    -moz-binding: url('data:text/xml,<?xml version="1.0"?> \
+                                                            \
+<bindings xmlns="http://www.mozilla.org/xbl"                \
+          xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" \
+          xmlns:xbl="http://www.mozilla.org/xbl">           \
+                                                            \
+  <binding id="label">                                      \
+    <content>                                               \
+      <vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"> \
+        <hbox align="center">                               \
+          <xbl:children/>                                   \
+          <label xbl:inherits="control,value,accesskey"/>   \
+          <textbox style="width: 0; visibility: hidden;"/>  \
+        </hbox>                                             \
+      </vbox>                                               \
+    </content>                                              \
+  </binding>                                                \
+</bindings>');
+}
+
+column:first-child {
+    min-width: 8em;
+}
+
+.error {
+    /* Per Scriptish */
+    box-shadow: 0pt 0pt 1.5px 1px red;
+}
+
+#input-run-at-startup > .checkbox-label-center-box {
+    display: none;
+}
+
+/* vim:se ft=css sts=4 sw=4 et: */

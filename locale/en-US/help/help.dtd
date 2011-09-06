@@ -1,0 +1,24 @@
+<!ENTITY xmlns.xhtml 'http://www.w3.org/1999/xhtml'>
+<!ENTITY help.base 'resource://scriptify/'>
+<!ENTITY skin 'resource://scriptify/skin/'>
+
+<!ENTITY help.header '
+    <div class="sidebar">
+        <h3>Scriptify Help</h3>
+        <ul class="sidebar-contents">
+            <li><a href="main.xhtml">Introduction</a></li>
+            <li><a href="scripts.xhtml">Userscripts</a>
+                <ul>
+                    <li><a href="scripts.xhtml#api">Scripting API</a></li>
+                </ul>
+            </li>
+            <li><a href="edit.xhtml">Script editing</a>
+                <ul>
+                    <li><a href="edit.xhtml#edit-add-on">Add-on editing</a></li>
+                    <li><a href="edit.xhtml#edit-script">Script editing</a></li>
+                    <li><a href="edit.xhtml#url-filters">URL filters</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+'>

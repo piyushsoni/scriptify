@@ -1,0 +1,92 @@
+@import url(http://fonts.googleapis.com/css?family=Droid+Sans);
+@import url(http://fonts.googleapis.com/css?family=Inconsolata);
+/* The above doesn't handle local Droid Sans Bold properly. */
+@font-face {
+  font-family: 'Droid Sans';
+  font-style: normal;
+  font-weight: bold;
+  src: local('Droid Sans Bold'), url('http://themes.googleusercontent.com/font?kit=EFpQQyG9GqCrobXxL-KRMQJKKGfqHaYFsRG-T3ceEVo') format('truetype');
+}
+
+body {
+    font: 11pt "Droid Sans", "DejaVu Sans", "Bitstream Vera Sans", Helvetica, Verdana, sans-serif;
+
+    position: relative;
+    padding: 0 15em;
+    width: 70ex;
+    margin: 2em auto 3em;
+    display: block;
+}
+
+section {
+    margin-bottom: 2em;
+}
+
+code, pre.code {
+    font-family: Inconsolata, Fixed, monospace;
+}
+
+dt {
+    font-weight: bold;
+}
+
+a[href] {
+    text-decoration: none;
+}
+a[href]::hover {
+    text-decoration: underline;
+}
+
+.hfil {
+    -moz-box-flex: 1;
+}
+
+.screenshots {
+    display: -moz-box;
+    -moz-box-orient: horizontal;
+    -moz-box-pack: center;
+    width: 100%;
+    align: center;
+}
+
+.screenshots .screenshot {
+    border: 1px solid black;
+}
+.screenshots * {
+    vertical-align: middle;
+}
+
+.screenshot {
+    text-align: center;
+}
+
+.sidebar {
+    position: absolute;
+    margin-left: -15em;
+}
+
+.sidebar > h3 {
+    font-size: 1em;
+    margin: 0;
+}
+
+.sidebar ul {
+    padding: .2em 1em;
+    font-weight: bold;
+}
+
+.sidebar > ul {
+    padding-top: 0;
+    padding-left: 1ex;
+}
+
+.sidebar li {
+    line-height: 1.4em;
+}
+
+.sidebar li {
+    list-style: none;
+}
+
+
+/* vim:se sts=4 sw=4 et ft=css: */

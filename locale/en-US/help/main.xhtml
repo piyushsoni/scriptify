@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
+
+    %include "help.dtd";
+]>
+
+<html xmlns="&xmlns.xhtml;">
+
+<head xml:base="&help.base;">
+    <script type="application/javascript"
+            src="/content/help.js"/>
+    <link rel="stylesheet" type="text/css"
+          href="/skin/help.css"/>
+</head>
+
+<body>
+    &help.header;
+
+    <section>
+        <h1>Welcome to Scriptify</h1>
+
+        <p>
+            Scriptify allows you to create and manage restartless add-ons made
+            from Scriptish and Greasemonkey userscripts. Creating a new add-on
+            is as simple as right clicking a user script link, or choosing a
+            local file via the Add-on Manager:
+        </p>
+
+        <div class="screenshots" style="height: 271px;">
+            <div class="hfil"/>
+            <img class="screenshot" src="&skin;context-scriptify.png"/>
+            <div class="hfil"/>
+            <div style="line-height: 271px">
+                <img class="screenshot" src="&skin;am-scriptify.png"/>
+            </div>
+            <div class="hfil"/>
+        </div>
+
+        <p>
+            Once you've finished
+            <a href="edit.xhtml">entering the add-on details</a>, your new
+            add-on will be automatically installed and can be managed via its
+            Add-on Manager entry:
+        </p>
+
+        <div class="screenshots">
+            <img class="screenshot" src="&skin;am-addon-scriptify.png"/>
+        </div>
+
+        <p>
+            The following actions are available:
+        </p>
+
+        <dl>
+            <dt>Edit</dt>
+            <dd>
+                Edit the add-on's metadata (name, description, version, …),
+                add or remove scripts, and adjust how scripts are executed.
+                On completion, the add-on is refreshed.
+            </dd>
+            <dt>Browse</dt>
+            <dd>
+                Browse the add-on's root directory. From here, you can edit
+                your add-on's scripts, add resources such as images and HTML
+                files, and even directly edit Scriptify metadata. This option
+                is only available when the add-on is unpacked.
+            </dd>
+            <dt>Export</dt>
+            <dd>
+                Export the add-on to an XPI file suitable for distribution.
+            </dd>
+            <dt>Update</dt>
+            <dd>
+                Updates the Scriptify loader included in the add-on, along
+                with the requisite application compatibility information.
+            </dd>
+            <dt>Refresh</dt>
+            <dd>
+                Reload the add-on, applying any changes made to its internal
+                scripts. This is useful when editing scripts via the Browse
+                function above.
+            </dd>
+            <dt>Pack/Unpack</dt>
+            <dd>
+                Packs or unpacks the add-on. Add-ons are ordinarily run
+                directly from their XPIs for performance reasons. However, in
+                order to ease development, the XPIs can be unpacked into a
+                directory which can then be browsed and modified.
+            </dd>
+        </dl>
+    </section>
+</body>
+
+</html>
+
+<!-- vim:se sts=4 sw=4 et ft=xhtml: -->

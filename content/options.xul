@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<!DOCTYPE prefwindow SYSTEM "scriptify://dtd/messages.dtd" [
+  <!ENTITY branch "extensions.scriptify.">
+]>
+
+<prefwindow type="prefwindow"
+            id="scriptify-prefs"
+            title="&options.title;"
+            xmlns="&xmlns.xul;">
+
+  <script type="application/javascript" src="options.js"/>
+
+  <prefpane>
+    <preferences id="preferences">
+      <preference id="pref-editor" name="&branch;editor" type="unichar"/>
+      <preference id="pref-file-manager" name="&branch;file-manager" type="unichar"/>
+    </preferences>
+    
+    <grid>
+      <columns>
+        <column/>
+        <column flex="1"/>
+      </columns>
+      <rows>
+        <row align="center">
+          <label control="input-editor" value="&options.editor.label;" accesskey="&options.editor.accesskey;"/>
+          <hbox>
+            <textbox preference="pref-editor" id="input-editor"/>
+            <button label="&options.browse.label;" accesskey="&options.browse.accesskey;"
+                    oncommand="dialog.findApp($('#pref-editor'), _('options.editor.title'))"/>
+          </hbox>
+        </row>
+
+        <row align="center">
+          <label control="input-file-manager" value="&options.file-manager.label;" accesskey="&options.file-manager.accesskey;"/>
+          <hbox>
+            <textbox preference="pref-file-manager" id="input-file-manager"/>
+            <button label="&options.browse.label;" accesskey="&options.file-manager.browse.accesskey;"
+                    oncommand="dialog.findApp($('#pref-file-manager'), _('options.file-manager.title'))"/>
+          </hbox>
+        </row>
+      </rows>
+    </grid>
+  </prefpane>
+</prefwindow>
+
+<!-- vim:se ft=xml sts=2 sw=2 et: -->

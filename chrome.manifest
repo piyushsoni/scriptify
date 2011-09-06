@@ -1,0 +1,8 @@
+resource scriptify	   ./
+resource scriptify-content content/
+
+resource scriptify-locale  locale/
+
+# For BabelZilla. Unused. (But also shuts up the validator, yay)
+locale scriptify en-US locale/en-US/
+

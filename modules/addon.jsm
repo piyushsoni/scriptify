@@ -1,0 +1,428 @@
+// Copyright (c) 2011 by Kris Maglione <maglione.k@gmail.com>
+//
+// This work is licensed for reuse under an MIT license. Details are
+// given in the LICENSE.txt file included with this file.
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Addon", "ChannelStream", "Stager", "Stream"];
+
+var BOOTSTRAP_JS = "resource://scriptify/scriptified/bootstrap.js";
+
+var RDF = Namespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+var EM  = Namespace("em",  "http://www.mozilla.org/2004/em-rdf#");
+
+var { AddonManager } = module("resource://gre/modules/AddonManager.jsm");
+
+var { config } = require("config");
+var { services } = require("services");
+var { template, util } = require("util");
+
+lazyRequire("io", ["File", "io"]);
+
+var Stream = function Stream(uri) {
+    return services.io.newChannelFromURI(uri).open();
+}
+
+// Hack
+var ChannelStream = Class("ChannelStream", XPCOM(Ci.nsIStreamListener), {
+    init: function init(uri, errors) {
+        this.errors = errors;
+        this.channel = services.io.newChannelFromURI(uri);
+        if (uri instanceof Ci.nsIFileURL || uri instanceof Ci.nsIJARURI)
+            return Stream(uri);
+
+        this.pipe = services.Pipe(true, true, 0, 0, null);
+        this.channel.asyncOpen(this, null);
+        return this.pipe.inputStream;
+    },
+    onStopRequest: function onStopRequest(request, context, status) {
+        if (status && this.errors)
+            this.errors.appendError(this.channel.URI.spec, status);
+
+        this.pipe.outputStream.close();
+    },
+    onDataAvailable: util.wrapCallback(function onDataAvailable(request, context, stream, offset, count) {
+        this.pipe.outputStream.writeFrom(stream, count);
+    })
+});
+
+var StagerBase = Class("StagerBase", XPCOM(Ci.nsIRequestObserver), {
+    init: function init() {
+        this.errors = [];
+    },
+
+    appendError: function appendError(file, error) {
+        if (typeof error == "number")
+            error = services.stringBundle.formatStatusMessage(error, []);
+
+        if (file instanceof Ci.nsIURI)
+            file = file.spec;
+
+        this.errors.push([file, error]);
+    }
+});
+
+var Stager = Class("Stager", StagerBase, {
+    init: function init(xpi, truncate) {
+        init.superapply(this, arguments);
+
+        if (xpi.exists() && xpi.isDirectory())
+            return BastardStagerFromHell(xpi);
+        this.xpi = xpi;
+
+        this.truncate = truncate ? File.MODE_TRUNCATE : 0;
+    },
+
+    getResourceURI: function getResourceURI(path) {
+        return util.newURI("jar:" + this.xpi.URI.spec + "!/" + path)
+                   .QueryInterface(Ci.nsIJARURI);
+    },
+
+    writer: Class.Memoize(function ()
+        services.ZipWriter(this.xpi,
+                           File.MODE_RDWR | (this.xpi.exists() ? this.truncate : File.MODE_CREATE))),
+
+    compression: 9,
+
+    add: function add(path, obj) {
+        this.queue = this.queue || {};
+        try {
+            if (this.writer.hasEntry(path))
+                this.writer.removeEntry(path, true);
+
+            if (obj instanceof Ci.nsIFile)
+                obj = File(obj).URI;
+            if (obj instanceof Ci.nsIURI)
+                obj = ChannelStream(obj)
+            else if (isString(obj))
+                obj = services.CharsetConv("UTF-8").convertToInputStream(obj);
+
+            this.queue[path] = obj;
+        }
+        catch (e) {
+            this.appendError(path, e);
+        }
+    },
+
+    finish: function finish(listener) {
+
+        for (let [path, obj] in Iterator(this.queue || {}))
+            if (obj instanceof Ci.nsIInputStream)
+                this.writer.addEntryStream(path, 0, this.compression, obj, true);
+            else if (obj instanceof Ci.nsIFile)
+                this.writer.addEntryFile(path, this.compression, obj, true);
+
+        this.listener = listener;
+        this.timeout(bind("processQueue", this.writer, this, null));
+    },
+
+    onStartRequest: function onStartRequest(request, context) {
+        if (this.listener && this.listener.onStartRequest)
+            util.trapErrors("onStartRequest", this.listener, request, context);
+    },
+
+    onStopRequest: util.wrapCallback(function onStopRequest(request, context, status) {
+        this.queue = 0;
+
+        // Windows. Blech.
+        try { this.writer.close(); } catch (e if config.OS.isWindows) {}
+
+        util.flushCache(this.xpi);
+        this.truncate = 0;
+        delete this.writer;
+
+        if (status)
+            this.appendError(null, status);
+
+        if (this.listener && this.listener.onStopRequest)
+            util.trapErrors("onStopRequest", this.listener, request, context, status);
+    })
+});
+
+var BastardStagerFromHell = Class("BastardStagerFromHell", StagerBase, {
+    init: function init(root) {
+        init.superapply(this, arguments);
+
+        this.root = root;
+        this.writes = [];
+    },
+
+    get queue() this.writes.length,
+
+    getResourceURI: function getResourceURI(path) this.root.child(path).URI,
+
+    add: function add(path, obj) {
+        if (obj instanceof Ci.nsIURI && obj.equals(this.getResourceURI(path)))
+            return;
+
+        try {
+            if (obj instanceof Ci.nsIURI)
+                obj = ChannelStream(obj)
+            else if (isString(obj))
+                obj = services.CharsetConv("UTF-8").convertToInputStream(obj);
+
+            this.writes.push([path, obj]);
+        }
+        catch (e) {
+            this.appendError(path, e);
+        }
+    },
+
+    finish: function finish(listener) {
+        this.listener = listener;
+        this.writeNext();
+    },
+
+    writeNext: util.wrapCallback(function () {
+        if (this.writes.length) {
+            let [path, stream] = this.writes.shift();
+
+            this.currentFile = path;
+
+            try {
+                let file = this.root.child(path);
+                if (!file.exists()) // OCREAT won't create the directory
+                    file.create(file.NORMAL_FILE_TYPE, octal(666));
+
+                let mode = File.MODE_WRONLY | File.MODE_CREATE | File.MODE_TRUNCATE;
+                this.outputStream = services.FileOutStream(file, mode, octal(666), 0);
+
+                services.StreamCopier(stream, this.outputStream, null,
+                                      true, true, 4096, true, true)
+                        .asyncCopy(this, null);
+            }
+            catch (e) {
+                this.appendError(path, e);
+            }
+        }
+        else if (this.listener && this.listener.onStopRequest)
+            util.trapErrors("onStopRequest", this.listener);
+    }),
+
+    onStopRequest: util.wrapCallback(function (request, context, status) {
+        if (status)
+            this.appendError(this.currentFile, status);
+
+        this.writeNext();
+    })
+});
+
+var Addon = Class("Addon", {
+    init: function init(root, updates) {
+        if (root instanceof Ci.nsIURI)
+            root = util.getFile(uri);
+        else if (root.getResourceURI) {
+            this.addon = root;
+            root = File(root.getResourceURI(""));
+        }
+
+        this.rename = {};
+        this.remove = {};
+        this.root = root;
+
+        this.update(updates);
+    },
+
+    getResourceURI: function getResource(path) {
+        if (this.root.isDirectory())
+            return this.root.child(path).URI;
+
+        return util.newURI("jar:" + this.root.URI.spec + "!/" + path);
+    },
+
+    restage: function restage(xpi, listener) {
+        if (xpi instanceof Ci.nsIFile)
+            this.xpi = xpi;
+        else {
+            this.listener = listener;
+            this.install = xpi === undefined || xpi == true;
+            this.xpi = io.createTempFile(File(this.root.parent)
+                                            .child(this.root.leafName
+                                                       .replace(/(\.xpi)?$/, ".xpi")));
+
+            if (false) {
+                let unpack = this.unpack != null ? this.unpack : this.manifest.unpack;
+                if (unpack == this.root.isDirectory())
+                    this.xpi = io.createTempFile(this.root);
+                else
+                    this.xpi = io.createTempFile(this.root.parent.child(
+                        this.root.leafName.replace(/(\.xpi)?$/, unpack ? "" : ".xpi")));
+            }
+            listener = this;
+        }
+
+        util.flushCache(this.xpi);
+        if (this.xpi.exists())
+            this.xpi.remove(true);
+
+        let stager = Stager(this.xpi);
+
+        for each (let file in this.contents)
+            if (!Set.has(this.remove, file))
+                stager.add(Set.has(this.rename, file) ? this.rename[file] : file,
+                           this.getResourceURI(file));
+
+        this.manifest["scriptify-version"] = config.addon.version;
+
+        stager.add("bootstrap.js", util.newURI(BOOTSTRAP_JS));
+        stager.add("scriptify.json", util.prettifyJSON(this.manifest));
+        stager.add("install.rdf", this.installRDF);
+        stager.finish(listener);
+    },
+
+    onStartRequest: function onStartRequest(request, context) {
+        if (this.listener && this.listener.onStartRequest)
+            util.trapErrors("onStartRequest", this.listener, request, context);
+    },
+
+    onStopRequest: function onStopRequest(request, context, status) {
+        if (this.install) {
+            AddonManager.getInstallForFile(this.xpi, this.closure.installInstaller,
+                                           "application/x-xpinstall");
+
+            if (this.listener && this.listener.onStopRequest)
+                util.trapErrors("onStopRequest", this.listener, request, context, status);
+        }
+        else {
+            if (this.root.exists() && this.root.isDirectory())
+                this.root.remove(true);
+            this.xpi.moveTo(this.root.parent, this.root.leafName);
+        }
+    },
+
+    installInstaller: function installInstaller(installer) {
+        installer.addListener(this);
+        installer.install();
+    },
+
+    onInstallEnded: function onInstallEnded() {
+        // Windows. Blech.
+        util.flushCache(this.xpi);
+        if (this.xpi.exists())
+            this.xpi.remove(false);
+    },
+    get onInstallCancelled() this.onInstallEnded,
+    get onInstallFailed() this.onInstallEnded,
+
+    get installRDF() Addon.InstallRDF(
+        update(this.metadata, {
+            targetApplications: Addon.getMetadata(config.addon.getResourceURI("install.rdf"))
+                                     .targetApplications
+        }),
+        this.unpack),
+
+    get contents() {
+        function rec(dir, path) {
+            for (let elem in dir.iterDirectory())
+                if (elem.isDirectory())
+                    rec(elem, path + elem.leafName + "/");
+                else
+                    res.push(path + elem.leafName)
+        }
+
+        let res = [];
+        if (this.root.isDirectory())
+            rec(this.root, "");
+        else {
+            let jar = services.ZipReader(this.root);
+            try {
+                res = iter(jar.findEntries("*")).toArray();
+            }
+            finally {
+                jar.close();
+            }
+        }
+        return res;
+    },
+
+    manifest: Class.Memoize(function () JSON.parse(util.httpGet(this.getResourceURI("scriptify.json").spec).responseText)),
+
+    metadata: Class.Memoize(function () Addon.getMetadata(this.getResourceURI("install.rdf")))
+}, {
+    // From XPIProvider.jsm
+    idTest: /^(\{[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}|[a-z0-9-\._]*\@[a-z0-9-\._]+)$/i,
+
+    getMetadata: function getMetadata(uri) {
+        function em(tag) services.rdf.GetResource(EM + tag);
+        function literal(resource, key)
+                let (target = rdf.GetTarget(resource, em(key), true))
+                    target instanceof Ci.nsIRDFLiteral ? target.Value : null;
+
+        function stuff(resource) {
+            let metadata = {};
+            for each (let key in ["bootstrap", "unpack"])
+                metadata[key] = literal(resource, key) == "true";
+
+            for each (let key in ["aboutURL", "creator", "description", "homepageURL",
+                                  "icon64URL", "iconURL", "id", "name", "optionsType",
+                                  "optionsURL", "updateKey", "updateURL", "version"])
+                metadata[key] = literal(resource, key);
+
+            for each (let key in ["contributor", "developer", "targetPlatform", "translator"])
+                metadata[key + "s"] = iter(rdf.GetTargets(resource, em(key), true), Ci.nsIRDFLiteral)
+                    .map(function (target) target.Value)
+                    .toArray();
+
+            return metadata;
+        }
+
+        try {
+            var rdf = services.rdf.GetDataSourceBlocking(uri.spec);
+            var install_manifest = services.rdf.GetResource("urn:mozilla:install-manifest");
+
+            var metadata = stuff(install_manifest);
+            metadata.targetApplications = {};
+
+            metadata.localized = iter(rdf.GetTargets(install_manifest, em("localized"), true))
+                    .map(function (target) [literal(target, "locale"), stuff(target)])
+                    .toObject();
+
+            for (let target in iter(rdf.GetTargets(install_manifest, em("targetApplication"), true)))
+                metadata.targetApplications[literal(target, "id")] = {
+                    minVersion: literal(target, "minVersion"),
+                    maxVersion: literal(target, "maxVersion"),
+                };
+
+            return metadata;
+        }
+        finally {
+            services.rdf.UnregisterDataSource(rdf);
+        }
+    },
+
+    InstallRDF: function InstallRDF(metadata, unpack) {
+        let rdf = <RDF xmlns={RDF} xmlns:em={EM}>
+            <Description about="urn:mozilla:install-manifest">
+                <em:type>2</em:type>
+                <em:id>{metadata.id}</em:id>
+                <em:name>{metadata.name}</em:name>
+                <em:version>{metadata.version}</em:version>
+                <em:description>{metadata.description}</em:description>
+                <em:creator>{metadata.creator}</em:creator>
+                <em:unpack>{!!(unpack != null ? unpack : metadata.unpack)}</em:unpack>
+                <em:bootstrap>true</em:bootstrap>
+
+                { template.map(metadata.developers || [], function (name)
+                    <em:developer xmlns:em={EM}>{name}</em:developer>) }
+
+                { template.map(metadata.contributors || [], function (name)
+                    <em:contributor xmlns:em={EM}>{name}</em:contributor>) }
+
+                { template.map(metadata.targetApplications, function ([id, attr])
+                <em:targetApplication xmlns={RDF} xmlns:em={EM}>
+                    <Description>
+                        <em:id>{id}</em:id>
+                        <em:minVersion>{attr.minVersion}</em:minVersion>
+                        <em:maxVersion>{attr.maxVersion}</em:maxVersion>
+                    </Description>
+                </em:targetApplication>) }
+            </Description>
+        </RDF>;
+
+        XML.prettyPrinting = true;
+        XML.ignoreWhitespace = true;
+        XML.prettyIndent = 4;
+        return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+               rdf.toXMLString().replace(/>\n +\n/g, ">\n");
+    }
+});

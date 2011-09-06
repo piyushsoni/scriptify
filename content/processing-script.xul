@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet type="text/css" href="edit-addon.css"?>
+<?xml-stylesheet type="text/css" href="processing-script.css"?>
+
+<!DOCTYPE dialog SYSTEM "scriptify://dtd/messages.dtd">
+
+<dialog id="scriptify-edit"
+        title="&edit.title.create;"
+        buttons="accept"
+        xmlns="&xmlns.xul;">
+
+  <script type="application/javascript" src="processing-script.js"/>
+
+  <deck id="deck">
+    <vbox id="pane-selector" buttons="accept">
+      <label value="&create.selector.heading;"/>
+      <hbox>
+        <textbox id="input-file" flex="1"
+                 type="autocomplete" autocompletesearch="file history"
+                 placeholder="File path or URL"/>
+        <button id="button-browse"
+                oncommand="dialog.browse()"
+                label="&options.browse.label;"
+                accesskey="&options.browse.accesskey;" />
+      </hbox>
+    </vbox>
+
+    <vbox id="pane-progress" buttons="cancel">
+      <progressmeter id="progress" mode="undetermined"/>
+
+      <label id="status" crop="end" value=" "/>
+    </vbox>
+
+    <groupbox id="pane-errors" buttons="accept,cancel">
+      <caption label="&create.errors.heading;"/>
+      <textbox id="errors" rows="2" multiline="true" readonly="true" class="plain"/>
+    </groupbox>
+  </deck>
+
+</dialog>
+
+<!-- vim:se ft=xml sts=2 sw=2 et: -->

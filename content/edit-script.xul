@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet type="text/css" href="edit-addon.css"?>
+
+<!DOCTYPE dialog SYSTEM "scriptify://dtd/messages.dtd">
+
+<dialog id="scriptify-edit"
+        title="&script.title;"
+        style="min-width: 40em;"
+        buttons="accept,cancel,help"
+        ondialoghelp="dialog.utilityOverlay.openUILinkIn('scriptify://locale/help/edit.xhtml#edit-script', 'tabshifted')"
+        xmlns="&xmlns.xul;">
+
+  <script type="application/javascript" src="edit-script.js"/>
+
+  <groupbox>
+    <caption label="&script.title.settings;"/>
+
+    <grid>
+      <columns>
+        <column/>
+        <column flex="1"/>
+      </columns>
+      <rows>
+        <row align="center">
+          <label control="input-name" value="&edit.name.label;" accesskey="&edit.name.accesskey;"/>
+          <textbox id="input-name" placeholder="&script.name.placeholder;"/>
+        </row>
+
+        <row align="center">
+          <label control="input-charset" value="&script.charset.label;" accesskey="&script.charset.accesskey;"/>
+          <textbox id="input-charset" placeholder="&script.charset.placeholder;"/>
+        </row>
+
+        <row>
+          <scriptify-label control="input-include" value="&script.include.label;" accesskey="&script.include.accesskey;"/>
+          <textbox id="input-include" rows="2" multiline="true" placeholder="&script.include.placeholder;"/>
+        </row>
+
+        <row>
+          <scriptify-label control="input-exclude" value="&script.exclude.label;" accesskey="&script.exclude.accesskey;"/>
+          <textbox id="input-exclude" rows="2" multiline="true" placeholder="&script.exclude.placeholder;"/>
+        </row>
+
+        <row align="center">
+          <label control="input-run-at-startup" value="&script.run-at-startup.label;" accesskey="&script.run-at-startup.accesskey;"/>
+          <checkbox id="input-run-at-startup"/>
+        </row>
+
+        <row align="center">
+          <label control="input-run-when" value="&script.run-when.label;" accesskey="&script.run-when.accesskey;"/>
+          <menulist id="input-run-when">
+            <menupopup>
+              <menuitem value="create" label="&script.run-when.create.label;"/>
+              <menuitem value="ready" label="&script.run-when.ready.label;"/>
+              <menuitem value="idle" label="&script.run-when.idle.label;"/>
+              <menuitem value="end" label="&script.run-when.end.label;"/>
+            </menupopup>
+        </menulist>
+        </row>
+      </rows>
+    </grid>
+  </groupbox>
+
+  <groupbox>
+    <caption label="&script.title.scripts;"/>
+
+    <hbox>
+      <listbox id="input-files" rows="3" flex="1"
+               onselect="dialog.updateButtons()"/>
+      <vbox>
+        <button id="button-add"
+                label="&edit.add.label;" accesskey="&edit.add.accesskey;"
+                scriptify-command="add"/>
+        <button id="button-edit" tooltiptext="&edit.edit.tooltip;"
+                label="&edit.edit.label;" accesskey="&edit.edit.accesskey;"
+                scriptify-command="edit" enabled-when="selected unpacked"/>
+        <button id="button-remove"
+                label="&edit.remove.label;" accesskey="&edit.remove.accesskey;"
+                scriptify-command="remove" enabled-when="selected"/>
+        <button id="button-rename"
+                label="&edit.rename.label;" accesskey="&edit.rename.accesskey;"
+                scriptify-command="rename" enabled-when="selected"/>
+        <separator/>
+        <button id="button-move-up"
+                label="&edit.move-up.label;" accesskey="&edit.move-up.accesskey;"
+                scriptify-command="move-up" enabled-when="selected"/>
+        <button id="button-move-down"
+                label="&edit.move-down.label;" accesskey="&edit.move-down.accesskey;"
+                scriptify-command="move-down" enabled-when="selected"/>
+      </vbox>
+    </hbox>
+  </groupbox>
+</dialog>
+
+<!-- vim:se ft=xml sts=2 sw=2 et: -->

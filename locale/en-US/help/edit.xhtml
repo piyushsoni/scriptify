@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
+
+    %include "help.dtd";
+]>
+
+<html xmlns="&xmlns.xhtml;">
+
+<head xml:base="&help.base;">
+    <script type="application/javascript"
+            src="/content/help.js"/>
+    <link rel="stylesheet" type="text/css"
+          href="/skin/help.css"/>
+</head>
+
+<body>
+    &help.header;
+
+    <section>
+        <h1>Script Editing</h1>
+
+        <p>
+            The following dialogs are used to edit metadata,
+            contents, and execution parameters of new and existing
+            userscript add-ons.
+        </p>
+    </section>
+
+    <section id="edit-add-on">
+        <h2>The Edit Add-on dialog</h2>
+
+        <div class="screenshot">
+            <img src="&skin;edit-add-on.png" alt="dialog screenshot"/>
+        </div>
+
+        <p>
+            This dialog is used to edit the general properties of an
+            add-on, including its name, description, authorship
+            information, and internal metadata. Script execution
+            information is controlled via the
+            <a href="#edit-script">Edit Script dialog</a>.
+        </p>
+
+        <p>
+            The contents of the fields are as follows:
+        </p>
+
+        <dl>
+            <dt>Name</dt>
+            <dd>
+                The name of the add-on as displayed in the Add-on
+                Manager.
+            </dd>
+            <dt>Description</dt>
+            <dd>
+                The add-on's description as displayed in the Add-on
+                Manager.
+            </dd>
+            <dt>Homepage</dt>
+            <dd>The URL of the add-on's homepage.</dd>
+            <dt>ID</dt>
+            <dd>
+                The extension's
+                <a href="https://developer.mozilla.org/en/install_manifests#id">internal id</a>.
+                This must be in the form of a UUID or an email
+                address, and needs to be specific enough not to
+                conflict with any other add-ons. The domain of the
+                email address should be a domain that you control
+                and the username should describe the add-on. In a
+                pinch, a real email address will suffice.
+            </dd>
+            <dt>Version</dt>
+            <dd>
+                The extension's <a href="https://developer.mozilla.org/en/install_manifests#version">version number</a>.
+            </dd>
+            <dt>Developers</dt>
+            <dd>
+                A list of the add-on's developers, one per line.
+            </dd>
+            <dt>Contributors</dt>
+            <dd>
+                A list of contributors to the add-on, one per line.
+            </dd>
+            <dt>Scripts</dt>
+            <dd>
+                The list of scripts this add-on will execute. Each
+                script may consist of multiple script files, all of
+                which are loaded at the same time, into the same
+                Sandbox.
+            </dd>
+        </dl>
+    </section>
+
+    <section id="edit-script">
+        <h2>The Edit Script dialog</h2>
+
+        <div class="screenshot">
+            <img src="&skin;edit-script.png" alt="dialog screenshot"/>
+        </div>
+
+        <p>
+            This dialog is used for editing the individual scripts
+            for an add-on. Each script may consist of multiple
+            files, all of which are loaded at the same time, into
+            the same Sandbox. You can read
+            <a href="scripts.xhtml">more about script execution</a> on the
+            Userscripts page.
+        </p>
+
+        <p>
+            The contents of the fields are as follows:
+        </p>
+
+        <dl>
+            <dt>Name</dt>
+            <dd>
+                The scripts name as it appears in the script list.
+            </dd>
+            <dt>Encoding</dt>
+            <dd>
+                The script's character encoding. Defaults to UTF-8.
+            </dd>
+            <dt>Include sites</dt>
+            <dd>
+                A list of <a href="#url-filters">URL filters</a> for sites on
+                which this script will run, one per line.
+            </dd>
+            <dt>Exclude sites</dt>
+            <dd>
+                A list of <a href="#url-filters">URL filters</a> for sites on
+                which this script will not run, even if they match a site in the
+                include list.
+            </dd>
+            <dt>Load at startup</dt>
+            <dd>
+                If true, run this script for any matching document when the
+                add-on is installed, updated, or enabled. Scripts which choose
+                this option must take care to handle being loaded later in the
+                page load cycle than they may ordinarilly expect.
+            </dd>
+            <dt>Load scripts</dt>
+            <dd>
+                Determines when scripts are first loaded.
+            </dd>
+            <dt>Script files</dt>
+            <dd>
+                A list of script files to run in this sandbox. Scripts are
+                loaded in the order that they appear in the list.
+            </dd>
+        </dl>
+    </section>
+
+    <section id="url-filters">
+        <h2>URL filters</h2>
+
+        <p>
+            Scriptify user scripts use URL filters which are a hybrid of
+            Greasemonkey's
+            <a href="http://wiki.greasespot.net/Include_and_exclude_rules">include rules</a>
+            and Google Chrome's
+            <a href="http://code.google.com/chrome/extensions/match_patterns.html">match patterns</a>.
+        </p>
+
+        <ul>
+            <li>The filter must be in the form of
+                <code>&lt;protocol>://&lt;host-filter>/&lt;path></code> or
+                otherwise one of <code>*</code> or <code>&lt;all_urls></code> to
+                match all sites.</li>
+            <li><code>&lt;protocol></code> must be one of <code>http</code>,
+                <code>https</code>, <code>ftp</code>, or <code>*</code>. The
+                <code>about</code> protocol may be used <em>only</em> if the
+                filter is <code>about:home</code>.</li>
+            <li>Unlike Google's filtes, <code>&lt;host></code> <em>may</em>
+                contain wildcards anywhere in the host, but hosts which begin
+                with <code>*.</code> will match any subdomain of the trailing
+                hostname, including the hostname itself. I.e.,
+                <code>*.google.com</code> will match both
+                <code>www.google.com</code> and <code>google.com</code>.</li>
+            <li>Domain filters ending in <code>.tld</code> will match the
+                the preceding hostname followed by any top-level domain,
+                including pseudo-TLDs such as <code>blogspot.com</code>.</li>
+        </ul>
+    </section>
+
+</body>
+
+</html>
+
+<!-- vim:se sts=4 sw=4 et ft=xhtml: -->

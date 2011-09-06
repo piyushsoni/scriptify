@@ -1,0 +1,238 @@
+<?xml version="1.0"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
+
+    %include "help.dtd";
+]>
+
+<html xmlns="&xmlns.xhtml;">
+
+<head xml:base="&help.base;">
+    <script type="application/javascript"
+            src="/content/help.js"/>
+    <link rel="stylesheet" type="text/css"
+          href="/skin/help.css"/>
+</head>
+
+<body>
+    &help.header;
+
+    <section>
+        <h2>Userscripts</h2>
+
+        <p>
+            Userscripts are executed in a sandbox environment with its own,
+            distinct global namespace. Multiple script files may be run in the
+            sandbox, each with full access to the global variables of the
+            others, but scripts running outside of the sandbox, for instance on
+            page content, cannot access any data within the sandbox.
+            Additionally, access to DOM nodes and other native objects is
+            isolated from any modifications made by content JavaScript. Such
+            modifications, as well as globals defined by script content, may
+            only be accessed via the <code>unsafeWindow</code> object.
+        </p>
+
+        <p>
+            There are several distinctions between the execution environments
+            provided by Scriptify and by Greasemonkey:
+        </p>
+
+        <ul>
+            <li>The <code>return</code> statement may not be used at the
+                top-level. Use GM_finish() instead.</li>
+            <li>Executed code is not wrapped in a closure.</li>
+            <li>Code is loaded via the subscript loader rather than via eval, so
+                debugging information in stack traces is correct, and the code
+                is cached rather than recompiled on each load.</li>
+            <li>There is no currently API to add menu items.</li>
+            <li>Scripts are loaded immediately after the window global is
+                created, rather than after the DOM has finished loading, by
+                default.</li>
+            <li>Several additional API items functions provided.</li>
+        </ul>
+    </section>
+
+    <section id="api">
+        <h2>Scripting API</h2>
+
+        <p>
+            Scriptified user scripts have access to an API based on the APIs of
+            Greasemonkey and Scriptish, with several additions and subtractions:
+        </p>
+
+        <pre class="code"><![CDATA[
+    /**
+     * Inserts a new <style/> node into the current document with the
+     * given CSS text.
+     *
+     * @param {string} css The CSS styles to add.
+     */
+    GM_addStyle: function addStyle(css) { ... },
+
+    /**
+     * Generates DOM nodes from the given E4X XML literal.
+     *
+     * @param {xml} xml The XML literal to convert.
+     * @param {object} nodes If present, created elements with a "key"
+     *      attribute will be stored as properties of this object.
+     *      @optional
+     * @param {Document} doc If present, DOM nodes are created in this
+     *      document.
+     *      @optional
+     */
+    GM_makeDOM: function makeDOM(xml, nodes, doc) { ... },
+
+    /**
+     * Executes the given function when the document's DOM is ready.
+     *
+     * @param {function} func The function to execute.
+     * @param {object} self The 'this' object with which to call *func*. 
+     */
+    GM_ready: function ready(func, self) { ... },
+
+    /**
+     * Returns the value of the preference *key* from the preference
+     * branch "extensions.<addon-id>." where <addon-id> is the ID of the
+     * current add-on.
+     *
+     * @param {string} key The name of the preference to retrieve.
+     * @param {*} defaultValue The value to return if the preference
+     *      does not exist. @optional
+     * @returns {bool|int|string|type(defaultValue)}
+     */
+    GM_getValue: function getValue(key, defaultValue) { ... },
+
+    /**
+     * Sets the value of the preference *key* to *val.
+     *
+     * @param {string} key The name of the preference to retrieve.
+     * @param {bool|int|string|null} value The value to set.
+     * @see .getValue
+     */
+    GM_setValue: function setValue(key, value) { ... },
+
+    /**
+     * Deletes the preference *key*.
+     *
+     * @param {string} key The name of the preference to retrieve.
+     * @param {bool|int|string|null} value The value to set.
+     * @see .getValue
+     */
+    GM_deleteValue: function deleteValue(key) { ... },
+
+    /**
+     * Returns a list of preference names.
+     *
+     * @param {[string]} value The value to set.
+     * @see .getValue
+     */
+    GM_listValues: function listValues() { ... },
+
+    /**
+     * Prematurely ends the loading of the current script.
+     */
+    GM_finish: function finish() { ... },
+
+    /**
+     * Sets the contents of the clipboard to the given string.
+     *
+     * @param {string} text The text to write to the clipboard.
+     */
+    GM_setClipboard: function setClipboard(text) { ... },
+
+    /**
+     * Opens the given URL in a new tab.
+     *
+     * @param {string} url The URL to load.
+     * @param {boolean} background If true, the tab is loaded in the
+     *      background. @optional
+     */
+    GM_openInTab: function openInTab(url, background) { ... },
+
+    /**
+     * Opens a new XMLHttpRequest with the given parameters.
+     *
+     * @param {object} params The parameters with which to open the
+     *      XMLHttpRequest. Valid properties include:
+     *
+     *     url: (string) The URL to load.
+     *     data: (string|File|FormData) The data to send.
+     *     method: (string) The method with which to make the requests.
+     *             Defaults to "GET".
+     *     onload: (function(object)) The "load" event handler.
+     *     onerror: (function(object)) The "error" event handler.
+     *     onreadystatechange: (function(object)) The "readystatechange" event handler.
+     *     headers: (object) An object with each property representig a
+     *              request header value to set.
+     *     user: (string) The username to send with HTTP authentication
+     *           parameters.
+     *     password: (string) The password to send with HTTP authentication
+     *           paraneters.
+     */
+    GM_xmlhttpRequest: function xmlhttpRequest(params) { ... },
+
+    /**
+     * Logs the stringified arguments to the Error Console.
+     */
+    GM_log: function log() { ... },
+
+    /**
+     * Logs the stringified arguments to the Error Console if the "debug"
+     * preference is greater to or equal the given debug level.
+     *
+     * @param {int} level The debug level.
+     * @param {*} ... The arguments to log.
+     */
+    GM_debug: function debug(level) { ... },
+
+    /**
+     * Reports the given error to the Error Console.
+     *
+     * @param {object|string} error The error to report.
+     */
+    GM_reportError: function reportError(error) { ... },
+
+    /**
+     * Loads the script resource from this package at the given *path*
+     * into *object*.
+     *
+     * @param {string} path The path of the script to load.
+     * @param {object} object The object into which to load the script.
+     *      @default The current sandbox.
+     * @param {string} charset The character set as which to parse the
+     *      script.
+     *      @default "ISO-8859-1"
+     */
+    GM_loadScript: function loadScript(path, object) { ... },
+
+    /**
+     * Returns a data: URL representing the file inside this
+     * extension at *path*.
+     *
+     * @param {string} path The path within this extension at which to
+     *      find the resource.
+     * @returns {string}
+     * @see .getResourceText
+     */
+    GM_getResourceURL: function getResourceURL(path) { ... },
+
+    /**
+     * Returns the text of the file inside this extension at *path*.
+     *
+     * @param {string} path The path within this extension at which to
+     *      find the resource.
+     * @param {string} charset The character set from which to decode
+     *      the file.
+     *      @default "UTF-8"
+     * @see .getResourceURL
+     */
+    GM_getResourceText: function getResourceText(path, charset) { ... }
+]]></pre>
+    </section>
+
+</body>
+
+</html>
+
+<!-- vim:se sts=4 sw=4 et ft=xhtml: -->

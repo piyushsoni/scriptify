@@ -1,0 +1,14 @@
+#!/bin/zsh
+setopt extendedglob
+
+xpi="../scriptify-$1@dactyl.googlecode.com.xpi"
+7z a $xpi \
+	(content|modules|skin)/*.(js|xul|jsm|css|png|xml|dtd) \
+	locale/**/*.(xhtml|dtd|properties) \
+	scriptified/bootstrap.js \
+	bootstrap.jsm bootstrap.js \
+	LICENSE install.rdf icon(*~*-bak).png chrome.manifest
+
+echo "Name: $xpi" >/dev/stderr
+
+echo file://$(cleanname "$(pwd)/$xpi")

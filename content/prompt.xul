@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<!DOCTYPE dialog SYSTEM "scriptify://dtd/messages.dtd">
+
+<dialog id="scriptify-prompt"
+        buttons="accept,cancel"
+        xmlns="&xmlns.xul;">
+
+  <script type="application/javascript" src="prompt.js"/>
+
+  <label id="label"/>
+  <textbox id="input-value"/>
+
+</dialog>
+
+<!-- vim:se ft=xml sts=2 sw=2 et: -->

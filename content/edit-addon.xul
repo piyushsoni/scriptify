@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet type="text/css" href="edit-addon.css"?>
+
+<!DOCTYPE dialog SYSTEM "scriptify://dtd/messages.dtd">
+
+<dialog id="scriptify-edit"
+        title="&edit.title.create;"
+        style="min-width: 40em;"
+        buttons="accept,cancel,help"
+        ondialoghelp="dialog.utilityOverlay.openUILinkIn('scriptify://locale/help/edit.xhtml#edit-add-on', 'tabshifted')"
+        xmlns="&xmlns.xul;">
+
+  <script type="application/javascript" src="edit-addon.js"/>
+
+  <groupbox>
+    <caption label="&edit.title.description.label;"/>
+
+    <grid>
+      <columns>
+        <column/>
+        <column flex="1"/>
+      </columns>
+      <rows>
+        <row align="center">
+          <label control="input-name" value="&edit.name.label;" accesskey="&edit.name.accesskey;"/>
+          <textbox id="input-name" placeholder="&edit.name.placeholder;"/>
+        </row>
+
+        <row align="center">
+          <label control="input-description" value="&edit.description.label;" accesskey="&edit.description.accesskey;"/>
+          <textbox id="input-description" placeholder="&edit.description.placeholder;"/>
+        </row>
+
+        <row align="center">
+          <label control="input-homepage" value="&edit.homepage.label;" accesskey="&edit.homepage.accesskey;"/>
+          <textbox id="input-homepage" placeholder="&edit.homepage.placeholder;"/>
+        </row>
+      </rows>
+    </grid>
+  </groupbox>
+
+  <groupbox>
+    <caption label="&edit.title.metadata.label;"/>
+
+    <grid>
+      <columns>
+        <column/>
+        <column flex="1"/>
+      </columns>
+      <rows>
+        <row align="center">
+          <label control="input-id" value="&edit.id.label;" accesskey="&edit.id.accesskey;"/>
+          <textbox id="input-id" placeholder="&edit.id.placeholder;"/>
+        </row>
+
+        <row align="center">
+          <label control="input-version" value="&edit.version.label;" accesskey="&edit.version.accesskey;"/>
+          <textbox id="input-version" placeholder="&edit.version.placeholder;"/>
+        </row>
+      </rows>
+    </grid>
+  </groupbox>
+
+  <groupbox>
+    <caption label="&edit.title.authorship.label;"/>
+
+    <grid>
+      <columns>
+        <column/>
+        <column flex="1"/>
+      </columns>
+      <rows>
+        <row align="center">
+          <label control="input-creator" value="&edit.creator.label;" accesskey="&edit.creator.accesskey;"/>
+          <textbox id="input-creator" placeholder="&edit.creator.placeholder;"/>
+        </row>
+
+        <row>
+          <scriptify-label control="input-developers" value="&edit.developers.label;" accesskey="&edit.developers.accesskey;"/>
+          <textbox id="input-developers" placeholder="&edit.developers.placeholder;" rows="2" multiline="true"/>
+        </row>
+
+        <row>
+          <scriptify-label control="input-contributors" value="&edit.contributors.label;" accesskey="&edit.contributors.accesskey;"/>
+          <textbox id="input-contributors" placeholder="&edit.contributors.placeholder;" rows="2" multiline="true"/>
+        </row>
+      </rows>
+    </grid>
+  </groupbox>
+
+  <groupbox>
+    <caption label="&edit.title.scripts.label;"/>
+
+    <hbox>
+      <listbox id="input-scripts" rows="3" flex="1"
+               onselect="dialog.updateButtons()"/>
+      <vbox>
+        <button label="&edit.add.label;" accesskey="&edit.add.accesskey;"
+                scriptify-command="add"/>
+        <button label="&edit.edit.label;" accesskey="&edit.edit.accesskey;"
+                scriptify-command="edit"  enabled-when="selected"/>
+        <button label="&edit.remove.label;" accesskey="&edit.remove.accesskey;"
+                scriptify-command="remove"  enabled-when="selected"/>
+        <separator/>
+        <button label="&edit.move-up.label;" accesskey="&edit.move-up.accesskey;"
+                scriptify-command="move-up"  enabled-when="selected"/>
+        <button label="&edit.move-down.label;" accesskey="&edit.move-down.accesskey;"
+                scriptify-command="move-down"  enabled-when="selected"/>
+      </vbox>
+    </hbox>
+  </groupbox>
+</dialog>
+
+<!-- vim:se ft=xml sts=2 sw=2 et: -->

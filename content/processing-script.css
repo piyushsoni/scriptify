@@ -1,0 +1,13 @@
+
+#status {
+    width: 70ex !important;
+}
+
+#errors, #errors > input {
+    white-space: pre;
+}
+#pane-errors:not([selected]) > * {
+    max-height: 0;
+}
+
+/* vim:se sts=4 sw=4 et ft=css: */
