@@ -1,0 +1,22 @@
+{
+    "name": "scriptify",
+
+    "module-paths": [
+        "resource://scriptify/modules/scriptify/",
+        "resource://scriptify/modules/common/",
+        "resource://scriptify/modules/"
+    ],
+
+    "locale-paths": [
+        "scriptify://locale/",
+        "resource://scriptify-locale/en-US/"
+    ],
+
+    "protocols": [
+        {
+            "name": "scriptify",
+            "uuid": "{cc8c8fd5-2764-444f-992c-335bf3a7ff67}",
+            "content": "resource://scriptify-content/"
+        }
+    ]
+}

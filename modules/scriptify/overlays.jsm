@@ -221,7 +221,8 @@ overlay.overlayWindow(["about:addons",
         onExternalInstall: function onExternalInstall() { this.timeout(this.updateAddons); }
     }));
 
-overlay.overlayWindow(["chrome://browser/content/browser.xul"],
+overlay.overlayWindow(["chrome://browser/content/browser.xul",
+                       "chrome://navigator/content/navigator.xul"],
     Class("BrowserOverlay", Overlay, {
         after: <e4x xmlns={XUL}>
             <menuitem id="context-openlinkintab">

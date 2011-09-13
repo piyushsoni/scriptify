@@ -19,6 +19,13 @@ var { template, util } = require("util");
 
 lazyRequire("io", ["File", "io"]);
 
+var COMPRESSABLE_WHITELIST = [
+    "application/x-javascript",
+    "application/javascript",
+    /^text\//,
+    /^application\/(.*\+|)xml$/
+];
+
 var Stream = function Stream(uri) {
     return services.io.newChannelFromURI(uri).open();
 }
@@ -86,12 +93,23 @@ var Stager = Class("Stager", StagerBase, {
 
     add: function add(path, obj) {
         this.queue = this.queue || {};
+        this.types = this.types || {};
         try {
             if (this.writer.hasEntry(path))
                 this.writer.removeEntry(path, true);
 
             if (obj instanceof Ci.nsIFile)
                 obj = File(obj).URI;
+
+            if (obj instanceof Ci.nsIURI) {
+                if (/^data:([^,;]+)/.test(obj.spec))
+                    this.types[path] = RegExp.$1;
+                else
+                    try { this.types[path] = services.mime.getTypeFromURI(obj); } catch (e) {}
+            }
+            else
+                this.types[path] = "text/plain";
+
             if (obj instanceof Ci.nsIURI)
                 obj = ChannelStream(obj)
             else if (isString(obj))
@@ -104,13 +122,20 @@ var Stager = Class("Stager", StagerBase, {
         }
     },
 
+    getLevel: function getLevel(path) {
+        let type = this.types[path];
+        if (COMPRESSABLE_WHITELIST.some(function (pattern) pattern == type || pattern.test && pattern.test(type)))
+            return this.compression;
+        return 0;
+    },
+
     finish: function finish(listener) {
 
         for (let [path, obj] in Iterator(this.queue || {}))
             if (obj instanceof Ci.nsIInputStream)
-                this.writer.addEntryStream(path, 0, this.compression, obj, true);
+                this.writer.addEntryStream(path, 0, this.getLevel(path), obj, true);
             else if (obj instanceof Ci.nsIFile)
-                this.writer.addEntryFile(path, this.compression, obj, true);
+                this.writer.addEntryFile(path, this.getLevel(path), obj, true);
 
         this.listener = listener;
         this.timeout(bind("processQueue", this.writer, this, null));
