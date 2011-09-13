@@ -16,3 +16,4 @@ syntax: regexp
 ## For rejects
 \.(orig|rej|bak|diff)$
 
+^scriptified/(?!bootstrap.js$)
