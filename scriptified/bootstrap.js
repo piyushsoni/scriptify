@@ -12,11 +12,14 @@ function debug() {
     dump((addon ? addon.id : "scriptify") + ": " + Array.join(arguments, ", ") + "\n");
 }
 
+const URI = Components.stack.filename.replace(/.* -> /, "");
+
 const { AddonManager } = module("resource://gre/modules/AddonManager.jsm");
 const { XPCOMUtils }   = module("resource://gre/modules/XPCOMUtils.jsm");
 
 const Services = Object.create(module("resource://gre/modules/Services.jsm").Services);
 XPCOMUtils.defineLazyServiceGetter(Services, "clipboard", "@mozilla.org/widget/clipboardhelper;1", "nsIClipboardHelper");
+XPCOMUtils.defineLazyServiceGetter(Services, "messageManager", "@mozilla.org/globalmessagemanager;1", "nsIChromeFrameMessageManager");
 XPCOMUtils.defineLazyServiceGetter(Services, "mime", "@mozilla.org/mime;1", "nsIMIMEService");
 XPCOMUtils.defineLazyServiceGetter(Services, "security", "@mozilla.org/scriptsecuritymanager;1", "nsIScriptSecurityManager");
 XPCOMUtils.defineLazyServiceGetter(Services, "tld", "@mozilla.org/network/effective-tld-service;1", "nsIEffectiveTLDService");
@@ -26,6 +29,12 @@ const resourceProto = Services.io.getProtocolHandler("resource").QueryInterface(
 const principal = Cc["@mozilla.org/nullprincipal;1"].createInstance(Ci.nsIPrincipal);
 
 var addon;
+var contentScriptURI;
+
+var messages = {
+    event: "scriptify-event",
+    prefs: "scriptify-prefs"
+};
 
 function wrap(fn, throws)
     function wrapper() {
@@ -72,16 +81,29 @@ let manager = {
             this.load(window, true);
 
         Services.obs.addObserver(this, this.TOPIC, false);
+        Services.messageManager.loadFrameScript(contentScriptURI, true);
+        Services.messageManager.addMessageListener(messages.prefs, this);
     },
 
     cleanup: function cleanup() {
         resourceProto.setSubstitution(this.package, null);
         Services.obs.removeObserver(this, this.TOPIC);
+        Services.messageManager.removeMessageListener(messages.prefs, this);
     },
 
     uninstall: function uninstall() {
         if (this.prefs)
             this.prefs.clear();
+    },
+
+    receiveMessage: function receiveMessage(message) {
+        var { name, json } = message;
+        switch (name) {
+        case messages.prefs:
+            let prefs = Prefs(json.branch, json.defaults);
+            return prefs[json.method].apply(prefs, json.args);
+            break;
+        }
     },
 
     getResourceURI: function getResourceURI(path) {
@@ -622,6 +644,27 @@ Prefs.prototype = {
     }
 };
 
+function ProxyPrefs(branch, defaults) {
+    this.constructor = ProxyPrefs;
+    this.root = branch || "";
+    this.defaults = !!defaults;
+}
+ProxyPrefs.prototype = {
+    Branch: function Branch(branch) new this.constructor(this.root + branch),
+
+    __noSuchMethod__: function __noSuchMethod__(meth, args) {
+        return sendSyncMessage(messages.prefs, {
+            branch: this.root,
+            defaults: this.defaults,
+            method: meth,
+            args: args
+        });
+    }
+};
+
+if (typeof sendSyncMessage != "undefined")
+    Prefs = ProxyPrefs;
+
 let prefs = new Prefs("");
 
 let util = {
@@ -700,8 +743,54 @@ let util = {
     }
 };
 
+function contentScript(global, uri, data, messages) {
+    const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+    const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
+
+    try {
+        // We don't need multiple handlers for the same process.
+        if (Services.io.getProtocolHandler("resource")
+                    .QueryInterface(Ci.nsIResProtocolHandler)
+                    .hasSubstitution(data.id.replace("@", ".")))
+            return;
+
+        const principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal);
+        const sandbox = Cu.Sandbox(principal, { sandboxPrototype: global, wantXrays: false });
+        Services.scriptloader.loadSubScript(uri, sandbox, "UTF-8");
+
+        addMessageListener(messages.event, sandbox.wrap(function callback(message) {
+            var { json } = message;
+
+            if (json.event == "shutdown")
+                removeMessageListener(messages.event, callback);
+
+            if (typeof sandbox[json.event] == "function")
+                sandbox[json.event](json.data, json.reason);
+        }));
+    }
+    catch (e) {
+        Cu.reportError(e);
+    }
+}
+
+function proxyMessage(name, data, reason) {
+    Services.messageManager.sendAsyncMessage(messages.event, {
+        event: name,
+        data: { id: data.id, version: data.version },
+        reason: reason
+    });
+}
+
 function startup(data, reason) {
     addon = data;
+
+    for (let [k, v] in Iterator(messages))
+        messages[k] = data.id + ":" + v;
+
+    contentScriptURI = "data:application/javascript,(" + encodeURIComponent(contentScript + ")(this," + [URI, data, messages].map(uneval)) + ")";
+
+    proxyMessage("startup", data, reason);
+
     AddonManager.getAddonByID(data.id, function (addon_) {
         addon = addon_;
         manager.init(reason);
@@ -709,6 +798,8 @@ function startup(data, reason) {
 }
 
 function shutdown(data, reason) {
+    proxyMessage("shutdown", data, reason);
+
     if (reason != APP_SHUTDOWN)
         manager.cleanup();
 }
