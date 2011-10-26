@@ -1,15 +1,17 @@
 // Copyright (c) 2011 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
-// given in the LICENSE.txt file included with this file.
+// given in the LICENSE file included with this file.
 "use strict";
 
 var EXPORTED_SYMBOLS = ["Munger", "Script"];
 
-var { Addon, Stager, Stream } = require("addon");
 var { File } = require("io");
 var { services } = require("services");
 var { util } = require("util");
+
+lazyRequire("addon", ["Addon", "Stager", "Stream"]);
+lazyRequire("messages", ["_"]);
 
 let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
     init: function init(root, urls, callbacks, truncate) {
@@ -142,19 +144,25 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
                             this.metadata["run-when"] = v;
                             break;
                         case "run-at-startup":
-                            this.metadata["run-at-startup"] = !~["false", "no", 0].indexOf(v);
+                            this.metadata["run-at-startup"] = !~["false", "no", "0"].indexOf(v);
                             break;
+                        // Hurrah for TMTOWTDI. :(
                         case "homepage":
                         case "homepageURL":
                         case "website":
-                            this.metadata.homepage = v;
+                            this.metadata.homepageURL = v;
                             break;
                         case "match":
                             this.metadata[k].push(v);
                             break;
                         case "include":
                         case "exclude":
-                            this.metadata[k].push(Munger.mungeURLFilter(v));
+                            try {
+                                this.metadata[k].push(Munger.mungeURLFilter(v));
+                            }
+                            catch (e) {
+                                this.stager.appendError(script, _("munger.invalidFilter", k, String(v || "").quote()));
+                            }
                             break;
                         case "author":
                         case "developer":
@@ -175,7 +183,7 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
                 }
             }
             catch (e) {
-                this.errors.push([script, e]);
+                this.stager.appendError(script, e);
             }
 
             if (script == this.principal.fileName)
@@ -194,16 +202,19 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
      * Fix some common incompatibilities in URL filters.
      */
     mungeURLFilter: function mungeURLFilter(filter) {
-        if (filter[0] == "/")
-            return filter;
+        filter = filter.trim();
+        util.assert(filter);
 
-        if (RegExp("^(?:[a-z-*]+)://(?:[^/])+\\*$").test(filter))
-            filter += "/*";
+        if (filter[0] != "/") {
+            if (RegExp("^(?:[a-z-*]+)://(?:[^/])+\\*$").test(filter))
+                filter += "/*";
 
-        filter = filter.replace(/^http\*:/, "*:")
-                       .replace(RegExp("^([a-z-*]+://[^/]+)\\.\\*/"),
-                                "$1.tld/");
+            filter = filter.replace(/^http\*:/, "*:")
+                           .replace(RegExp("^([a-z-*]+://[^/]+)\\.\\*/"),
+                                    "$1.tld/");
+        }
 
+        this.validateMatcher(filter);
         return filter;
     },
 
@@ -225,25 +236,29 @@ let Script = Class("Script", {
         this.uri = uri;
     },
 
-    get lines() {
-        return File.readLines(Stream(this.uri));
-    },
+    get lines() File.readLines(Stream(this.uri)),
 
     get metadata() {
-        let lines = { __iterator__: function () this, next: bind("next", this.lines) };
+        let iterator = this.lines;
+        try {
+            let lines = { __iterator__: function () this, next: bind("next", iterator) };
 
-        for (let line in lines)
-            if (/^\s*\/\/\s+==UserScript==\s*$/.test(line))
-                break;
+            for (let line in lines)
+                if (/^\s*\/\/\s+==UserScript==\s*$/.test(line))
+                    break;
 
-        for (let line in lines) {
-            if (/^\s*\/\/\s+==\/UserScript==\s*$/.test(line))
-                return;
+            for (let line in lines) {
+                if (/^\s*\/\/\s+==\/UserScript==\s*$/.test(line))
+                    return;
 
-            if (/\s*\/\/\s*@(\S+)(?:\s+(.*?)\s*)?$/.test(line))
-                yield [RegExp.$1, RegExp.$2 || ""]
+                if (/\s*\/\/\s*@(\S+)(?:\s+(.*?)\s*)?$/.test(line))
+                    yield [RegExp.$1, RegExp.$2 || ""]
+            }
         }
-    },
+        finally {
+            iterator.close();
+        }
+    }
 });
 
 // vim:se sts=4 sw=4 et ft=javascript:

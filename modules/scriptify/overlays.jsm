@@ -2,7 +2,7 @@
 // Copyright (c) 2008-2011 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
-// given in the LICENSE.txt file included with this file.
+// given in the LICENSE file included with this file.
 "use strict";
 
 var EXPORTED_SYMBOLS = ["config"];
@@ -23,7 +23,7 @@ lazyRequire("io", ["File", "io"]);
 lazyRequire("messages", ["_"]);
 
 overlay.overlayWindow(["about:addons",
-                       "chrome://mozapps/content/extensions/extensions.xul"], 
+                       "chrome://mozapps/content/extensions/extensions.xul"],
     Class("AddonOverlay", Overlay, {
         before: <e4x xmlns={XUL}>
             <toolbarbutton id="header-utils-btn">
@@ -89,7 +89,7 @@ overlay.overlayWindow(["about:addons",
             });
 
             this.$("#scriptify-button").command(this.closure.onCommand);
-            
+
             overlay.listen(window, "ViewChanged", this.closure.onViewChanged);
         },
 

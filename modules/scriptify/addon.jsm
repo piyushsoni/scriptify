@@ -1,7 +1,7 @@
 // Copyright (c) 2011 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
-// given in the LICENSE.txt file included with this file.
+// given in the LICENSE file included with this file.
 "use strict";
 
 var EXPORTED_SYMBOLS = ["Addon", "ChannelStream", "Stager", "Stream"];
@@ -32,13 +32,14 @@ var Stream = function Stream(uri) {
 
 // Hack
 var ChannelStream = Class("ChannelStream", XPCOM(Ci.nsIStreamListener), {
-    init: function init(uri, errors) {
+    init: function init(uri, errors, needAsync) {
         this.errors = errors;
         this.channel = services.io.newChannelFromURI(uri);
         if (uri instanceof Ci.nsIFileURL || uri instanceof Ci.nsIJARURI)
-            return Stream(uri);
+            if (!needAsync)
+                return Stream(uri);
 
-        this.pipe = services.Pipe(true, true, 0, 0, null);
+        this.pipe = services.Pipe(false, true, 0, 0, null);
         this.channel.asyncOpen(this, null);
         return this.pipe.inputStream;
     },
@@ -61,6 +62,8 @@ var StagerBase = Class("StagerBase", XPCOM(Ci.nsIRequestObserver), {
     appendError: function appendError(file, error) {
         if (typeof error == "number")
             error = services.stringBundle.formatStatusMessage(error, []);
+
+        util.reportError(error && error.stack ? error : Error(error));
 
         if (file instanceof Ci.nsIURI)
             file = file.spec;
@@ -111,7 +114,7 @@ var Stager = Class("Stager", StagerBase, {
                 this.types[path] = "text/plain";
 
             if (obj instanceof Ci.nsIURI)
-                obj = ChannelStream(obj)
+                obj = ChannelStream(obj, this)
             else if (isString(obj))
                 obj = services.CharsetConv("UTF-8").convertToInputStream(obj);
 
@@ -150,7 +153,10 @@ var Stager = Class("Stager", StagerBase, {
         this.queue = 0;
 
         // Windows. Blech.
-        try { this.writer.close(); } catch (e if config.OS.isWindows) {}
+        try {
+            this.writer.close();
+        }
+        catch (e if config.OS.isWindows) {}
 
         util.flushCache(this.xpi);
         this.truncate = 0;
@@ -182,7 +188,7 @@ var BastardStagerFromHell = Class("BastardStagerFromHell", StagerBase, {
 
         try {
             if (obj instanceof Ci.nsIURI)
-                obj = ChannelStream(obj)
+                obj = ChannelStream(obj, this, true)
             else if (isString(obj))
                 obj = services.CharsetConv("UTF-8").convertToInputStream(obj);
 
@@ -228,6 +234,7 @@ var BastardStagerFromHell = Class("BastardStagerFromHell", StagerBase, {
         if (status)
             this.appendError(this.currentFile, status);
 
+        util.trapErrors("close", this.outputStream);
         this.writeNext();
     })
 });
@@ -248,6 +255,12 @@ var Addon = Class("Addon", {
         this.update(updates);
     },
 
+    get isProxy() this.addon
+               &&  this.root.isDirectory()
+               && !this.root.equals(File(services.directory.get("ProfD", Ci.nsIFile))
+                                                 .child("extensions")
+                                                 .child(this.addon.id)),
+
     getResourceURI: function getResource(path) {
         if (this.root.isDirectory())
             return this.root.child(path).URI;
@@ -256,36 +269,43 @@ var Addon = Class("Addon", {
     },
 
     restage: function restage(xpi, listener) {
+        let { isProxy } = this;
+
         if (xpi instanceof Ci.nsIFile)
             this.xpi = xpi;
         else {
             this.listener = listener;
             this.install = xpi === undefined || xpi == true;
-            this.xpi = io.createTempFile(File(this.root.parent)
-                                            .child(this.root.leafName
-                                                       .replace(/(\.xpi)?$/, ".xpi")));
+            if (isProxy)
+                this.xpi = this.root;
+            else
+                this.xpi = io.createTempFile(File(this.root.parent)
+                                                .child(this.root.leafName
+                                                           .replace(/(\.xpi)?$/, ".xpi")),
+                                             "file");
 
-            if (false) {
-                let unpack = this.unpack != null ? this.unpack : this.manifest.unpack;
-                if (unpack == this.root.isDirectory())
-                    this.xpi = io.createTempFile(this.root);
-                else
-                    this.xpi = io.createTempFile(this.root.parent.child(
-                        this.root.leafName.replace(/(\.xpi)?$/, unpack ? "" : ".xpi")));
-            }
             listener = this;
         }
 
-        util.flushCache(this.xpi);
-        if (this.xpi.exists())
-            this.xpi.remove(true);
-
         let stager = Stager(this.xpi);
 
-        for each (let file in this.contents)
-            if (!Set.has(this.remove, file))
-                stager.add(Set.has(this.rename, file) ? this.rename[file] : file,
-                           this.getResourceURI(file));
+        if (isProxy)
+            for (let path in keys(this.remove)) {
+                let file = this.root.child(path);
+                if (!/^\.\.(\/|\\|$)/.test(file.getRelativeDescriptor(this.root)))
+                    // Paranoia yay.
+                    file.remove(true);
+            }
+        else {
+            util.flushCache(this.xpi);
+            if (this.xpi.exists())
+                this.xpi.remove(true);
+
+            for each (let file in this.contents)
+                if (!Set.has(this.remove, file))
+                    stager.add(Set.has(this.rename, file) ? this.rename[file] : file,
+                               this.getResourceURI(file));
+        }
 
         this.manifest["scriptify-version"] = config.addon.version;
 
@@ -302,8 +322,18 @@ var Addon = Class("Addon", {
 
     onStopRequest: function onStopRequest(request, context, status) {
         if (this.install) {
-            AddonManager.getInstallForFile(this.xpi, this.closure.installInstaller,
-                                           "application/x-xpinstall");
+            // Alas, without this we wind up with dead holding file
+            // descriptors open, and Windows, with its lovely mandatory
+            // file locking, refuses to delete the previous version of
+            // the add-on.
+            if (config.OS.isWindows)
+                Cu.forceGC();
+
+            if (this.isProxy)
+                util.rehash(this.addon);
+            else
+                AddonManager.getInstallForFile(this.xpi, this.closure.installInstaller,
+                                               "application/x-xpinstall");
 
             if (this.listener && this.listener.onStopRequest)
                 util.trapErrors("onStopRequest", this.listener, request, context, status);
@@ -391,28 +421,26 @@ var Addon = Class("Addon", {
             return metadata;
         }
 
-        try {
-            var rdf = services.rdf.GetDataSourceBlocking(uri.spec);
-            var install_manifest = services.rdf.GetResource("urn:mozilla:install-manifest");
+        var rdf = services.RDFSink();
+        services.RDFParser().parseString(rdf, uri,
+                                         util.httpGet(uri.spec).responseText);
 
-            var metadata = stuff(install_manifest);
-            metadata.targetApplications = {};
+        var install_manifest = services.rdf.GetResource("urn:mozilla:install-manifest");
 
-            metadata.localized = iter(rdf.GetTargets(install_manifest, em("localized"), true))
-                    .map(function (target) [literal(target, "locale"), stuff(target)])
-                    .toObject();
+        var metadata = stuff(install_manifest);
+        metadata.targetApplications = {};
 
-            for (let target in iter(rdf.GetTargets(install_manifest, em("targetApplication"), true)))
-                metadata.targetApplications[literal(target, "id")] = {
-                    minVersion: literal(target, "minVersion"),
-                    maxVersion: literal(target, "maxVersion"),
-                };
+        metadata.localized = iter(rdf.GetTargets(install_manifest, em("localized"), true))
+                .map(function (target) [literal(target, "locale"), stuff(target)])
+                .toObject();
 
-            return metadata;
-        }
-        finally {
-            services.rdf.UnregisterDataSource(rdf);
-        }
+        for (let target in iter(rdf.GetTargets(install_manifest, em("targetApplication"), true)))
+            metadata.targetApplications[literal(target, "id")] = {
+                minVersion: literal(target, "minVersion"),
+                maxVersion: literal(target, "maxVersion")
+            };
+
+        return metadata;
     },
 
     InstallRDF: function InstallRDF(metadata, unpack) {
@@ -422,10 +450,14 @@ var Addon = Class("Addon", {
                 <em:id>{metadata.id}</em:id>
                 <em:name>{metadata.name}</em:name>
                 <em:version>{metadata.version}</em:version>
-                <em:description>{metadata.description}</em:description>
-                <em:creator>{metadata.creator}</em:creator>
                 <em:unpack>{!!(unpack != null ? unpack : metadata.unpack)}</em:unpack>
                 <em:bootstrap>true</em:bootstrap>
+
+                { template.map(["creator", "description", "homepageURL",
+                                "updateURL", "updateKey",
+                                "optionsType", "optionsURL"],
+                    function (key) metadata[key] ? <em:{key} xmlns:em={EM}>{metadata[key]}</em:{key}>
+                                                 : undefined) }
 
                 { template.map(metadata.developers || [], function (name)
                     <em:developer xmlns:em={EM}>{name}</em:developer>) }

@@ -26,6 +26,15 @@ code, pre.code {
     font-family: Inconsolata, Fixed, monospace;
 }
 
+pre.code {
+    overflow-x: auto;
+}
+
+.code.file {
+    padding: 1ex;
+    border: 1px dashed gray;
+}
+
 dt {
     font-weight: bold;
 }
@@ -86,6 +95,17 @@ a[href]::hover {
 
 .sidebar li {
     list-style: none;
+}
+
+.api-symbols > li > strong:first-child,
+#api-symbols > li > strong:first-child {
+    display: inline-block;
+    min-width: 6em;
+}
+
+#re-flags > li > strong:first-child {
+    display: inline-block;
+    min-width: 1em;
 }
 
 

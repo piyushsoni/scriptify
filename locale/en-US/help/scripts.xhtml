@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE html 
+<!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
 
@@ -9,6 +9,7 @@
 <html xmlns="&xmlns.xhtml;">
 
 <head xml:base="&help.base;">
+    <title>Userscripts :: Scriptify Help</title>
     <script type="application/javascript"
             src="/content/help.js"/>
     <link rel="stylesheet" type="text/css"
@@ -19,7 +20,7 @@
     &help.header;
 
     <section>
-        <h2>Userscripts</h2>
+        <h1>Userscripts</h1>
 
         <p>
             Userscripts are executed in a sandbox environment with its own,
@@ -35,7 +36,7 @@
 
         <p>
             There are several distinctions between the execution environments
-            provided by Scriptify and by Greasemonkey:
+            provided by Scriptify and by Greasemonkey, namely:
         </p>
 
         <ul>
@@ -49,7 +50,11 @@
             <li>Scripts are loaded immediately after the window global is
                 created, rather than after the DOM has finished loading, by
                 default.</li>
-            <li>Several additional API items functions provided.</li>
+            <li>Several additional API items functions provided, as documented
+                below.</li>
+            <li><code>GM_xmlhttpRequest</code> response objects provide
+                <code>responseXML</code> and <code>responseJSON</code>
+                properties.</li>
         </ul>
     </section>
 
@@ -61,176 +66,355 @@
             Greasemonkey and Scriptish, with several additions and subtractions:
         </p>
 
-        <pre class="code"><![CDATA[
-    /**
-     * Inserts a new <style/> node into the current document with the
-     * given CSS text.
-     *
-     * @param {string} css The CSS styles to add.
-     */
-    GM_addStyle: function addStyle(css) { ... },
+        <pre class="code file"><![CDATA[/**
+ * Inserts a new <style/> node into the current document with the
+ * given CSS text.
+ *
+ * @param {string} css The CSS styles to add.
+ */
+GM_addStyle: function addStyle(css) { ... },
 
-    /**
-     * Generates DOM nodes from the given E4X XML literal.
-     *
-     * @param {xml} xml The XML literal to convert.
-     * @param {object} nodes If present, created elements with a "key"
-     *      attribute will be stored as properties of this object.
-     *      @optional
-     * @param {Document} doc If present, DOM nodes are created in this
-     *      document.
-     *      @optional
-     */
-    GM_makeDOM: function makeDOM(xml, nodes, doc) { ... },
+/**
+ * Generates DOM nodes from the given E4X XML literal.
+ *
+ * @param {xml} xml The XML literal to convert.
+ * @param {object} nodes If present, created elements with a "key"
+ *      attribute will be stored as properties of this object.
+ *      @optional
+ * @param {Document} doc If present, DOM nodes are created for this
+ *      document.
+ *      @optional
+ */
+GM_makeDOM: function makeDOM(xml, nodes, doc) { ... },
 
-    /**
-     * Executes the given function when the document's DOM is ready.
-     *
-     * @param {function} func The function to execute.
-     * @param {object} self The 'this' object with which to call *func*. 
-     */
-    GM_ready: function ready(func, self) { ... },
+/**
+ * Executes the given function when the document's DOM is ready.
+ *
+ * @param {function} func The function to execute.
+ * @param {object} self The 'this' object with which to call *func*.
+ */
+GM_ready: function ready(func, self) { ... },
 
-    /**
-     * Returns the value of the preference *key* from the preference
-     * branch "extensions.<addon-id>." where <addon-id> is the ID of the
-     * current add-on.
-     *
-     * @param {string} key The name of the preference to retrieve.
-     * @param {*} defaultValue The value to return if the preference
-     *      does not exist. @optional
-     * @returns {bool|int|string|type(defaultValue)}
-     */
-    GM_getValue: function getValue(key, defaultValue) { ... },
+/**
+ * Returns the value of the preference *key* from the preference
+ * branch "extensions.<addon-id>." where <addon-id> is the ID of
+ * the current add-on.
+ *
+ * @param {string} key The name of the preference to retrieve.
+ * @param {*} defaultValue The value to return if the preference
+ *      does not exist. @optional
+ * @returns {bool|int|string|type(defaultValue)}
+ */
+GM_getValue: function getValue(key, defaultValue) { ... },
 
-    /**
-     * Sets the value of the preference *key* to *val.
-     *
-     * @param {string} key The name of the preference to retrieve.
-     * @param {bool|int|string|null} value The value to set.
-     * @see .getValue
-     */
-    GM_setValue: function setValue(key, value) { ... },
+/**
+ * Sets the value of the preference *key* to *val.
+ *
+ * @param {string} key The name of the preference to retrieve.
+ * @param {bool|int|string|null} value The value to set.
+ * @see .getValue
+ */
+GM_setValue: function setValue(key, value) { ... },
 
-    /**
-     * Deletes the preference *key*.
-     *
-     * @param {string} key The name of the preference to retrieve.
-     * @param {bool|int|string|null} value The value to set.
-     * @see .getValue
-     */
-    GM_deleteValue: function deleteValue(key) { ... },
+/**
+ * Deletes the preference *key*.
+ *
+ * @param {string} key The name of the preference to retrieve.
+ * @param {bool|int|string|null} value The value to set.
+ * @see .getValue
+ */
+GM_deleteValue: function deleteValue(key) { ... },
 
-    /**
-     * Returns a list of preference names.
-     *
-     * @param {[string]} value The value to set.
-     * @see .getValue
-     */
-    GM_listValues: function listValues() { ... },
+/**
+ * Returns a list of preference names.
+ *
+ * @param {[string]} value The value to set.
+ * @see .getValue
+ */
+GM_listValues: function listValues() { ... },
 
-    /**
-     * Prematurely ends the loading of the current script.
-     */
-    GM_finish: function finish() { ... },
+/**
+ * Prematurely ends the loading of the current script.
+ */
+GM_finish: function finish() { ... },
 
-    /**
-     * Sets the contents of the clipboard to the given string.
-     *
-     * @param {string} text The text to write to the clipboard.
-     */
-    GM_setClipboard: function setClipboard(text) { ... },
+/**
+ * Sets the contents of the clipboard to the given string.
+ *
+ * @param {string} text The text to write to the clipboard.
+ */
+GM_setClipboard: function setClipboard(text) { ... },
 
-    /**
-     * Opens the given URL in a new tab.
-     *
-     * @param {string} url The URL to load.
-     * @param {boolean} background If true, the tab is loaded in the
-     *      background. @optional
-     */
-    GM_openInTab: function openInTab(url, background) { ... },
+/**
+ * Opens the given URL in a new tab.
+ *
+ * @param {string} url The URL to load.
+ * @param {boolean} background If true, the tab is loaded in the
+ *      background. @optional
+ */
+GM_openInTab: function openInTab(url, background) { ... },
 
-    /**
-     * Opens a new XMLHttpRequest with the given parameters.
-     *
-     * @param {object} params The parameters with which to open the
-     *      XMLHttpRequest. Valid properties include:
-     *
-     *     url: (string) The URL to load.
-     *     data: (string|File|FormData) The data to send.
-     *     method: (string) The method with which to make the requests.
-     *             Defaults to "GET".
-     *     onload: (function(object)) The "load" event handler.
-     *     onerror: (function(object)) The "error" event handler.
-     *     onreadystatechange: (function(object)) The "readystatechange" event handler.
-     *     headers: (object) An object with each property representig a
-     *              request header value to set.
-     *     user: (string) The username to send with HTTP authentication
-     *           parameters.
-     *     password: (string) The password to send with HTTP authentication
-     *           paraneters.
-     */
-    GM_xmlhttpRequest: function xmlhttpRequest(params) { ... },
+/**
+ * Opens a new XMLHttpRequest with the given parameters.
+ *
+ * @param {object} params The parameters with which to open the
+ *      XMLHttpRequest. Valid properties include:
+ *
+ *     url: (string) The URL to load.
+ *     data: (string|File|FormData) The data to send.
+ *     method: (string) The method with which to make the requests.
+ *             Defaults to "GET".
+ *     onload: (function(object)) The "load" event handler.
+ *     onerror: (function(object)) The "error" event handler.
+ *     onreadystatechange: (function(object)) The "readystatechange"
+ *                         event handler.
+ *     headers: (object) An object with each property representig a
+ *              request header value to set.
+ *     user: (string) The username to send with HTTP authentication
+ *           parameters.
+ *     password: (string) The password to send with HTTP
+ *               authentication parameters.
+ */
+GM_xmlhttpRequest: function xmlhttpRequest(params) { ... },
 
-    /**
-     * Logs the stringified arguments to the Error Console.
-     */
-    GM_log: function log() { ... },
+/**
+ * Logs the stringified arguments to the Error Console.
+ */
+GM_log: function log() { ... },
 
-    /**
-     * Logs the stringified arguments to the Error Console if the "debug"
-     * preference is greater to or equal the given debug level.
-     *
-     * @param {int} level The debug level.
-     * @param {*} ... The arguments to log.
-     */
-    GM_debug: function debug(level) { ... },
+/**
+ * Logs the stringified arguments to the Error Console if the
+ * "debug" preference is greater to or equal the given debug
+ * level.
+ *
+ * @param {int} level The debug level.
+ * @param {*} ... The arguments to log.
+ */
+GM_debug: function debug(level) { ... },
 
-    /**
-     * Reports the given error to the Error Console.
-     *
-     * @param {object|string} error The error to report.
-     */
-    GM_reportError: function reportError(error) { ... },
+/**
+ * Reports the given error to the Error Console.
+ *
+ * @param {object|string} error The error to report.
+ */
+GM_reportError: function reportError(error) { ... },
 
-    /**
-     * Loads the script resource from this package at the given *path*
-     * into *object*.
-     *
-     * @param {string} path The path of the script to load.
-     * @param {object} object The object into which to load the script.
-     *      @default The current sandbox.
-     * @param {string} charset The character set as which to parse the
-     *      script.
-     *      @default "ISO-8859-1"
-     */
-    GM_loadScript: function loadScript(path, object) { ... },
+/**
+ * Loads the script resource from this package at the given *path*
+ * into *object*.
+ *
+ * @param {string} path The path of the script to load.
+ * @param {object} object The object into which to load the script.
+ *      @default The current sandbox.
+ * @param {string} charset The character set as which to parse the
+ *      script.
+ *      @default "ISO-8859-1"
+ */
+GM_loadScript: function loadScript(path, object) { ... },
 
-    /**
-     * Returns a data: URL representing the file inside this
-     * extension at *path*.
-     *
-     * @param {string} path The path within this extension at which to
-     *      find the resource.
-     * @returns {string}
-     * @see .getResourceText
-     */
-    GM_getResourceURL: function getResourceURL(path) { ... },
+/**
+ * Returns a data: URL representing the file inside this
+ * extension at *path*.
+ *
+ * @param {string} path The path within this extension at which to
+ *      find the resource.
+ * @returns {string}
+ * @see .getResourceText
+ */
+GM_getResourceURL: function getResourceURL(path) { ... },
 
-    /**
-     * Returns the text of the file inside this extension at *path*.
-     *
-     * @param {string} path The path within this extension at which to
-     *      find the resource.
-     * @param {string} charset The character set from which to decode
-     *      the file.
-     *      @default "UTF-8"
-     * @see .getResourceURL
-     */
-    GM_getResourceText: function getResourceText(path, charset) { ... }
+/**
+ * Returns the text of the file inside this extension at *path*.
+ *
+ * @param {string} path The path within this extension at which to
+ *      find the resource.
+ * @param {string} charset The character set from which to decode
+ *      the file.
+ *      @default "UTF-8"
+ * @see .getResourceURL
+ */
+GM_getResourceText: function getResourceText(path, charset) { ... }
+]]></pre>
+
+        <p>
+            The <code>Prefs</code> class provides the following methods for use by
+            privileged scripts:
+        </p>
+
+        <pre class="code file"><![CDATA[/**
+ * Returns a new Prefs object for the sub-branch *branch* of this
+ * object.
+ *
+ * @param {string} branch The sub-branch to return.
+ */
+Branch: function Branch(branch) { ... },
+
+/**
+ * Clears the entire branch.
+ *
+ * @param {string} name The name of the preference branch to delete.
+ */
+clear: function clear(branch) { ... },
+
+/**
+ * Returns the full name of this object's preference branch.
+ */
+get root() { ... },
+
+/**
+ * Returns the value of the preference *name*, or *defaultValue* if
+ * the preference does not exist.
+ *
+ * @param {string} name The name of the preference to return.
+ * @param {*} defaultValue The value to return if the preference has
+ *                         no value.
+ * @optional
+ */
+get: function get(name, defaultValue) { ... },
+
+/**
+ * Returns true if the given preference exists in this branch.
+ *
+ * @param {string} name The name of the preference to check.
+ */
+has: function has(name) { ... },
+
+/**
+ * Returns an array of all preference names in this branch or the
+ * given sub-branch.
+ *
+ * @param {string} branch The sub-branch for which to return
+ *                        preferences.
+ * @optional
+ */
+getNames: function getNames(branch) { ... },
+
+/**
+ * Returns true if the given preference is set to its default value.
+ *
+ * @param {string} name The name of the preference to check.
+ */
+isDefault: function isDefault(name) { ... },
+
+/**
+ * Sets the preference *name* to *value*. If the preference already
+ * exists, it must have the same type as the given value.
+ *
+ * @param {name} name The name of the preference to change.
+ * @param {string|number|boolean} value The value to set.
+ */
+set: function set(name, value) { ... },
+
+/**
+ * Resets the preference *name* to its default value.
+ *
+ * @param {string} name The name of the preference to reset.
+ */
+reset: function reset(name) { ... }
 ]]></pre>
     </section>
 
+    <section id="api-extensions">
+        <h2>Extending the API</h2>
+
+        <p>
+            For user scripts which require access to chrome, add-ons
+            may extend the standard API by adding scripts to the
+            <code>"api"</code> array in <code>scriptify.json</code>.
+            Scriptify does not provide a UI for this, as it requires
+            special care and should not be attempted unless
+            absolutely necessary.
+        </p>
+
+        <p>
+            Any top-level symbols, except those beginning with
+            underscores, defined by API scripts are prefixed with
+            <code>GM_</code> and made available to all user scripts.
+            These scripts have full chrome privileges, may access
+            any Scriptify API functions by removing the
+            <code>GM_</code> prefix, and have the following
+            variables predefined:
+        </p>
+
+        <ul id="api-symbols">
+            <li><strong><code>prefs</code></strong> A <code>Prefs</code>
+                instance for the root preferences branch, as documented above.</li>
+            <li><strong><code>Cc</code></strong> <code>Components.classes</code></li>
+            <li><strong><code>Ci</code></strong> <code>Components.interfaces</code></li>
+            <li><strong><code>Cu</code></strong> <code>Components.utils</code></li>
+            <li><strong><code>Cr</code></strong> <code>Components.results</code></li>
+            <li><strong><code>Cs</code></strong> <code>Components.stack</code></li>
+            <li>
+                <strong><code>Services</code></strong> The <code>Services</code>
+                object from <code>Services.jsm</code>, with the following extra
+                properties:
+
+                <ul>
+                    <li><strong><code>clipboard</code></strong>: <code>@mozilla.org/widget/clipboardhelper;1</code> (<code>nsIClipboardHelper</code>)</li>
+                    <li><strong><code>messageManager</code></strong>: <code>@mozilla.org/globalmessagemanager;1</code> (<code>nsIChromeFrameMessageManager</code>)</li>
+                    <li><strong><code>mime</code></strong>: <code>@mozilla.org/mime;1</code> (<code>nsIMIMEService</code>)</li>
+                    <li><strong><code>security</code></strong>: <code>@mozilla.org/scriptsecuritymanager;1</code> (<code>nsIScriptSecurityManager</code>)</li>
+                    <li><strong><code>tld</code></strong>: <code>@mozilla.org/network/effective-tld-service;1</code> (<code>nsIEffectiveTLDService</code>)</li>
+                </ul>
+            </li>
+            <li><strong><code>manager</code></strong> A script manager with at
+                least the following properties:
+                <ul class="api-symbols">
+                    <li><strong><code>config</code></strong> A JSON object
+                        representing the contents of <code>scriptify.json</code></li>
+                    <li><strong><code>prefs</code></strong> A <code>Prefs</code>
+                        object for this add-on's main preference branch.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <p>
+            In addition to the standard API methods, the following properties
+            are available via the <code>this</code> object from API methods:
+        </p>
+
+        <ul id="api-symbols">
+            <li><strong><code>doc</code></strong> The document the script
+                was loaded into.</li>
+            <li><strong><code>win</code></strong> The window the script
+                was loaded into.</li>
+            <li><strong><code>sandbox</code></strong> The Sandbox the script
+                was loaded into.</li>
+        </ul>
+
+        <subsection id="api-extensions-example">
+            <h3>Example</h3>
+
+            <h4><code>scriptify.json</code></h4>
+            <pre class="code file"><![CDATA[{
+    "api": ["api.js"],
+    "scripts": [
+        {
+            "include": ["*://*.goatse.cx/"],
+            "paths":   ["content.js"]
+        }
+    ]
+}]]></pre>
+
+            <h4><code>api.js</code></h4>
+            <pre class="code file"><![CDATA[function toggleImages(on) {
+    let docShell = this.win.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIWebNavigation)
+                       .QueryInterface(Ci.nsIDocShell);
+
+    if (docShell.allowImages != on) {
+        debug(4, "Toggling images for " + this.win.location + ": " +
+                 !on + " -> " + on);
+        docShell.allowImages = on;
+        docShell.reload(docShell.LOAD_FLAGS_CHARSET_CHANGE);
+    }
+}
+]]></pre>
+
+            <h4><code>content.js</code></h4>
+            <pre class="code file"><![CDATA[GM_toggleImages(false);]]></pre>
+        </subsection>
+    </section>
 </body>
 
 </html>

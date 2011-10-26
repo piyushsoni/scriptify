@@ -2,12 +2,13 @@
 setopt extendedglob
 
 xpi="../scriptify-$1@dactyl.googlecode.com.xpi"
-7z a $xpi \
-	(content|modules|skin)/*.(js|xul|jsm|css|png|xml|dtd) \
+7z a -l $xpi \
+	modules/*/(*.(js|xul|jsm|css|png|xml|dtd)~bootstrap.js(|m)) \
+	(content|skin)/*.(js|xul|jsm|css|png|xml|dtd) \
 	locale/**/*.(xhtml|dtd|properties) \
 	scriptified/bootstrap.js \
 	bootstrap.jsm bootstrap.js \
-	LICENSE install.rdf icon(*~*-bak).png chrome.manifest
+	LICENSE install.rdf icon(*~*-bak).png config.json chrome.manifest
 
 echo "Name: $xpi" >/dev/stderr
 

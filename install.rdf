@@ -37,6 +37,18 @@
                 em:minVersion="2.1"
                 em:maxVersion="2.6a1"/>
         </em:targetApplication>
+
+        <!-- Fennec -->
+        <em:targetApplication>
+            <Description
+                em:id="{a23983c0-fd0e-11dc-95ff-0800200c9a66}"
+                em:minVersion="8.0a1"
+                em:maxVersion="10.0a1"/>
+        </em:targetApplication>
+    </Description>
+</RDF>
+
+<!-- vim: set fdm=marker sw=4 ts=4 et: -->
     </Description>
 </RDF>
 

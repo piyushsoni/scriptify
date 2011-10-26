@@ -1,7 +1,7 @@
 // Copyright (c) 2011 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
-// given in the LICENSE.txt file included with this file.
+// given in the LICENSE file included with this file.
 "use strict";
 
 Components.utils.import("resource://scriptify/bootstrap.jsm");
@@ -50,7 +50,7 @@ var dialog = Dialog(window, {
         id: Addon.idTest,
         name: util.identity,
         version: util.identity,
-        homepage: function (str) !str || util.newURI(str)
+        homepageURL: function (str) !str || util.newURI(str)
     },
 
     commands: {
@@ -118,7 +118,7 @@ var dialog = Dialog(window, {
 
     fields: {
         list:   ["developers", "contributors"],
-        string: ["creator", "description", "homepage", "id", "name", "version"]
+        string: ["creator", "description", "homepageURL", "id", "name", "version"]
     },
 
     onaccept: function onaccept() {
@@ -135,7 +135,7 @@ var dialog = Dialog(window, {
             this.metadata[key] = this.field(key).val().trim().split(/\s*\n\s*/)
                                      .filter(util.identity);
 
-        Addon(this.root, { metadata: this.metadata, manifest: this.manifest })
+        Addon(this.addon || this.root, { metadata: this.metadata, manifest: this.manifest })
             .restage(this.addon != null || this.install);
 
         util.flushCache(this.root);

@@ -34,8 +34,8 @@
         </row>
 
         <row align="center">
-          <label control="input-homepage" value="&edit.homepage.label;" accesskey="&edit.homepage.accesskey;"/>
-          <textbox id="input-homepage" placeholder="&edit.homepage.placeholder;"/>
+          <label control="input-homepageURL" value="&edit.homepage.label;" accesskey="&edit.homepage.accesskey;"/>
+          <textbox id="input-homepageURL" placeholder="&edit.homepage.placeholder;"/>
         </row>
       </rows>
     </grid>

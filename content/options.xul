@@ -18,7 +18,7 @@
       <preference id="pref-editor" name="&branch;editor" type="unichar"/>
       <preference id="pref-file-manager" name="&branch;file-manager" type="unichar"/>
     </preferences>
-    
+
     <grid>
       <columns>
         <column/>

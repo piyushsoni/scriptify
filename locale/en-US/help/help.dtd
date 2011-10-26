@@ -10,6 +10,7 @@
             <li><a href="scripts.xhtml">Userscripts</a>
                 <ul>
                     <li><a href="scripts.xhtml#api">Scripting API</a></li>
+                    <li><a href="scripts.xhtml#api-extensions">Extending API</a></li>
                 </ul>
             </li>
             <li><a href="edit.xhtml">Script editing</a>

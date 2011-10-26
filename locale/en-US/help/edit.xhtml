@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE html 
+<!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
 
@@ -9,6 +9,7 @@
 <html xmlns="&xmlns.xhtml;">
 
 <head xml:base="&help.base;">
+    <title>Script Editing :: Scriptify Help</title>
     <script type="application/javascript"
             src="/content/help.js"/>
     <link rel="stylesheet" type="text/css"
@@ -182,6 +183,66 @@
                 the preceding hostname followed by any top-level domain,
                 including pseudo-TLDs such as <code>blogspot.com</code>.</li>
         </ul>
+
+        <p>
+            Alternatively, pure regular expressions may be used by specifying a
+            filter in the form <code>/&lt;regexp>/&lt;flags></code> where
+            <code>&lt;regexp></code> is a regular expression which is implicitly
+            anchored to the beginning and end of the URL, and
+            <code>&lt;flags></code> may include any or none of:
+        </p>
+
+        <ul id="re-flags">
+            <li><strong>i</strong>
+                The regular expression is matched case insensitively.</li>
+        </ul>
+
+        <subsection id="url-filter-examples">
+            <h3>Examples</h3>
+
+            <dl>
+                <dt><code>*</code></dt>
+                <dd>Matches all URLs</dd>
+
+                <dt><code>*://google.com/</code></dt>
+                <dd>
+                    Matches <code>http://google.com/</code>,
+                    <code>https://google.com/</code>, and
+                    <code>ftp://google.com/</code>. Does <em>not</em>  match
+                    <code>gopher://google.com/</code>,
+                    <code>http://www.google.com/</code>, or
+                    <code>http://google.com/foo</code>.
+                </dd>
+
+                <dt><code>http://*.google.com/*</code></dt>
+                <dd>
+                    Matches <code>http://google.com/</code>,
+                    <code>http://www.google.com/</code>, and
+                    <code>http://www.google.com/foo</code>. Does <em>not</em> 
+                    match <code>https://www.google.com/</code>.
+                </dd>
+
+                <dt><code>http://*.google.tld/*</code></dt>
+                <dd>
+                    Matches <code>http://www.google.com/</code>,
+                    <code>http://www.google.co.uk/</code>, and
+                    <code>http://www.google.com/foo</code>. Does <em>not</em> 
+                    match <code>http://www.google.corporate/</code>.
+                </dd>
+
+                <dt><code>/.*[^?&amp;]_utm_source=.*/</code></dt>
+                <dd>
+                    Matches URLs loaded from FeedBurner feeds, <em>i.e.</em>, any URL
+                    containing the query parameter <code>_utm_source</code>
+                </dd>
+
+                <dt><code>/a/i</code></dt>
+                <dd>
+                    Matches <em>only</em>  the <em>exact</em>  URLs <code>a</code>
+                    and <code>A</code>.
+                </dd>
+            </dl>
+        </subsection>
     </section>
 
 </body>
