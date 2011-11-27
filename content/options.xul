@@ -28,7 +28,8 @@
         <row align="center">
           <label control="input-editor" value="&options.editor.label;" accesskey="&options.editor.accesskey;"/>
           <hbox>
-            <textbox preference="pref-editor" id="input-editor"/>
+            <textbox preference="pref-editor" id="input-editor"
+                     type="autocomplete" autocompletesearch="file"/>
             <button label="&options.browse.label;" accesskey="&options.browse.accesskey;"
                     oncommand="dialog.findApp($('#pref-editor'), _('options.editor.title'))"/>
           </hbox>
@@ -37,7 +38,8 @@
         <row align="center">
           <label control="input-file-manager" value="&options.file-manager.label;" accesskey="&options.file-manager.accesskey;"/>
           <hbox>
-            <textbox preference="pref-file-manager" id="input-file-manager"/>
+            <textbox preference="pref-file-manager" id="input-file-manager"
+                     type="autocomplete" autocompletesearch="file"/>
             <button label="&options.browse.label;" accesskey="&options.file-manager.browse.accesskey;"
                     oncommand="dialog.findApp($('#pref-file-manager'), _('options.file-manager.title'))"/>
           </hbox>

@@ -95,33 +95,33 @@ try {
          *      @optional
          */
         let GM_makeDOM_line = Components.stack.lineNumber + 1;
-        let GM_makeDOM = String(<![CDATA[
-        default xml namespace = Namespace("html", "http://www.w3.org/1999/xhtml");
-        function GM_makeDOM(xml, nodes) {
-           if (xml.length() != 1) {
-               let domnode = document.createDocumentFragment();
-               for each (let child in xml)
-                   domnode.appendChild(GM_makeDOM(child, nodes));
-               return domnode;
-           }
-           switch (xml.nodeKind()) {
-           case "text":
-               return document.createTextNode(String(xml));
-           case "element":
-               let domnode = document.createElementNS(xml.namespace(), xml.localName());
-               for each (let attr in xml.@*::*)
-                   domnode.setAttributeNS(attr.namespace(), attr.localName(), String(attr));
-
-               for each (let child in xml.*::*)
-                   domnode.appendChild(GM_makeDOM(child, nodes));
-               if (nodes && "@key" in xml)
-                   nodes[xml.@key] = domnode;
-               return domnode;
-           default:
-               return null;
-           }
-        }
-        ]]>);
+        let GM_makeDOM = '\n\
+        default xml namespace = Namespace("html", "http://www.w3.org/1999/xhtml");           \n\
+        function GM_makeDOM(xml, nodes) {                                                    \n\
+           if (xml.length() != 1) {                                                          \n\
+               let domnode = document.createDocumentFragment();                              \n\
+               for each (let child in xml)                                                   \n\
+                   domnode.appendChild(GM_makeDOM(child, nodes));                            \n\
+               return domnode;                                                               \n\
+           }                                                                                 \n\
+           switch (xml.nodeKind()) {                                                         \n\
+           case "text":                                                                      \n\
+               return document.createTextNode(String(xml));                                  \n\
+           case "element":                                                                   \n\
+               let domnode = document.createElementNS(xml.namespace(), xml.localName());     \n\
+               for each (let attr in xml.@*::*)                                              \n\
+                   domnode.setAttributeNS(attr.namespace(), attr.localName(), String(attr)); \n\
+                                                                                             \n\
+               for each (let child in xml.*::*)                                              \n\
+                   domnode.appendChild(GM_makeDOM(child, nodes));                            \n\
+               if (nodes && "@key" in xml)                                                   \n\
+                   nodes[xml.@key] = domnode;                                                \n\
+               return domnode;                                                               \n\
+           default:                                                                          \n\
+               return null;                                                                  \n\
+           }                                                                                 \n\
+        }                                                                                    \n\
+        ';
 
     API.prototype = {
         __proto__: { Cc: Cc, Ci: Ci, Cr: Cr, Cu: Cu, Services: Services,
@@ -964,19 +964,16 @@ try {
             for (let [k, v] in Iterator(messages))
                 messages[k] = data.id + ":" + v;
 
-            AddonManager.getAddonByID(data.id, wrap(function (addon_) {
-                addon = addon_ || addon;
+            // getAddonById at startup is obscenely expensive.
+            baseURI = Services.io.newURI(Components.stack.filename.slice(0, -"bootstrap.js".length));
 
-                baseURI = addon.getResourceURI(".");
-
-                // The Message manager on Gecko <8.0 won't accept message listeners
-                // from sandbox compartments.
-                if (Services.vc.compare(Services.appinfo.platformVersion, "10.*") < 0
-                        && Services.appinfo.name != "Fennec")
-                    manager = new GlobalManager;
-                else
-                    manager = new SlaveDriver;
-            }));
+            // The Message manager on Gecko <8.0 won't accept message listeners
+            // from sandbox compartments.
+            if (Services.vc.compare(Services.appinfo.platformVersion, "10.*") < 0
+                    && Services.appinfo.name != "Fennec")
+                manager = new GlobalManager;
+            else
+                manager = new SlaveDriver;
         }
 
         this.shutdown = function shutdown(data, reason) {

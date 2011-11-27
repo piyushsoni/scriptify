@@ -2,7 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
-"use strict";
+/* use strict */
 
 var EXPORTED_SYMBOLS = ["Munger", "Script"];
 
@@ -37,6 +37,7 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
             "run-when": "ready",
             paths: [],
             charset: "UTF-8",
+            localized: {},
             targetApplications: Addon.getMetadata(util.newURI("resource://scriptify/install.rdf"))
                                      .targetApplications
         };

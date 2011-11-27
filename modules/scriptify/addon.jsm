@@ -2,7 +2,6 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
-"use strict";
 
 var EXPORTED_SYMBOLS = ["Addon", "ChannelStream", "Stager", "Stream"];
 
@@ -464,6 +463,22 @@ var Addon = Class("Addon", {
 
                 { template.map(metadata.contributors || [], function (name)
                     <em:contributor xmlns:em={EM}>{name}</em:contributor>) }
+
+                { template.map(Iterator(metadata.localized), function ([id, attr])
+                <em:localized xmlns={RDF} xmlns:em={EM}>
+                    <Description>
+                        <em:locale>{id}</em:locale>
+                        { template.map(Iterator(attr), function ([key, val]) {
+                                let singular = key.replace(/s$/, "");
+                                if (isArray(val))
+                                    return template.map(val, function (val)
+                                           <em:{singular} xmlns:em={EM}>{val}</em:{singular}>);
+                                if (val)
+                                    return <em:{key} xmlns:em={EM}>{metadata[key]}</em:{key}>;
+                          })
+                        }
+                    </Description>
+                </em:localized>) }
 
                 { template.map(metadata.targetApplications, function ([id, attr])
                 <em:targetApplication xmlns={RDF} xmlns:em={EM}>

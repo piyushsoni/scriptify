@@ -1,4 +1,4 @@
-"use strict";
+/* use strict */
 
 const SOURCE = "file:///home/kris/foobaz.user.js";
 const ZIP    = "~/foobaz.zip";

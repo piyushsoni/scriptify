@@ -3,7 +3,6 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
-"use strict";
 
 var EXPORTED_SYMBOLS = ["config"];
 
@@ -198,9 +197,16 @@ overlay.overlayWindow(["about:addons",
 
         onPopupShowing: function onPopupShowing(item, event) {
             let packed = item.mAddon.getResourceURI(".") instanceof Ci.nsIJARURI;
-            for each (let command in ["pack", "unpack"])
-                DOM(item).findAnon("scriptify-command", command)
-                         .attr("hidden", (command == "unpack") ^ packed);
+            let proxied = Addon(item.mAddon).isProxy;
+            for each (let command in ["pack", "unpack"]) {
+                let cmd = DOM(item).findAnon("scriptify-command", command)
+                                   .attr("hidden", (command == "unpack") ^ packed);
+                if (proxied)
+                    cmd.attr({
+                        disabled: proxied,
+                        tooltiptext: _("addon.unavailableWhenProxied")
+                    });
+            }
 
             DOM(item).findAnon("scriptify-command", "browse")
                      .attr({
