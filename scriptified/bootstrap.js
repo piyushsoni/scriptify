@@ -965,7 +965,9 @@ try {
                 messages[k] = data.id + ":" + v;
 
             // getAddonById at startup is obscenely expensive.
-            baseURI = Services.io.newURI(Components.stack.filename.slice(0, -"bootstrap.js".length));
+            baseURI = util.newURI(Components.stack.filename
+                                            .replace(/.* -> /, "")
+                                            .slice(0, -"bootstrap.js".length));
 
             // The Message manager on Gecko <8.0 won't accept message listeners
             // from sandbox compartments.
