@@ -44,9 +44,9 @@ overlay.overlayWindow(["about:addons",
             </toolbarbutton>
         </e4x>.elements(),
 
-        addonButton: Class.Memoize(function () DOM.fromXML(
+        addonButton: Class.Memoize(function () (XML.ignoreWhitespace=true, DOM.fromXML(
             <button anonid="scriptify" label={_("addon.scriptify")}
-                    type="menu" xmlns={XUL}>
+                    class="addon-control" type="menu" xmlns={XUL}>
                 <menupopup anonid="scriptify-menu">
                     <menuitem scriptify-command="edit"
                               label={_("addon.edit.label")}
@@ -75,7 +75,7 @@ overlay.overlayWindow(["about:addons",
                               accesskey={_("addon.unpack.accesskey")}
                               tooltiptext={_("addon.unpack.tooltip")}/>
                 </menupopup>
-            </button>, this.doc)),
+            </button>, this.doc))),
 
         ready: function ready(window) {
             this.addonList = this.$("#addon-list")[0];
@@ -175,7 +175,7 @@ overlay.overlayWindow(["about:addons",
         },
 
         isScriptified: function isScriptified(addon)
-            io.uriExists(addon.getResourceURI("scriptify.json")),
+            io.uriExists(addon.getResourceURI && addon.getResourceURI("scriptify.json")),
 
         ScriptifyButton: function ScriptifyButton(item) {
             if (!this.isScriptified(item.mAddon))
@@ -254,8 +254,8 @@ overlay.overlayWindow(["chrome://browser/content/browser.xul",
             overlay.listen(this.$("#contentAreaContextMenu")[0], "popupshowing", function (event) {
                 let link = event.target.triggerNode;
                 let isUserScript = link instanceof Ci.nsIDOMHTMLAnchorElement
-                                        ? /\.user\.js$/.test(link.href)
-                                        : /\.user\.js$/.test(link.ownerDocument.documentURI);
+                                        ? /\.user\.js$/i.test(link.href)
+                                        : /\.user\.js$/i.test(link.ownerDocument.documentURI);
 
                 self.$(menuItem).attr("hidden", !isUserScript);
             });

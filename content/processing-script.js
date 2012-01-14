@@ -59,11 +59,11 @@ let dialog = Dialog(window, {
             if (file.exists() && !file.isDirectory())
                 return file;
         }
-        catch (e) {
-            let uri = util.newURI(val);
-            if (!(uri instanceof Ci.nsIFileURL) || uri.file.exists())
-                return uri;
-        }
+        catch (e) {}
+
+        let uri = util.newURI(val);
+        if (!(uri instanceof Ci.nsIFileURL) || uri.file.exists())
+            return uri;
         return null;
     },
 

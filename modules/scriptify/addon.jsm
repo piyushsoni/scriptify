@@ -25,9 +25,18 @@ var COMPRESSABLE_WHITELIST = [
     /^application\/(.*\+|)xml$/
 ];
 
+function GC() {
+    util.trapErrors(function () {
+        services.windowMediator.getMostRecentWindow(null)
+                .QueryInterface(Ci.nsIInterfaceRequestor)
+                .getInterface(Ci.nsIDOMWindowUtils)
+                .garbageCollect();
+    });
+}
+
 var Stream = function Stream(uri) {
     return services.io.newChannelFromURI(uri).open();
-}
+};
 
 // Hack
 var ChannelStream = Class("ChannelStream", XPCOM(Ci.nsIStreamListener), {
@@ -153,9 +162,13 @@ var Stager = Class("Stager", StagerBase, {
 
         // Windows. Blech.
         try {
+            if (config.OS.isWindows)
+                GC();
             this.writer.close();
         }
-        catch (e if config.OS.isWindows) {}
+        catch (e if config.OS.isWindows) {
+            Cu.reportError(e);
+        }
 
         util.flushCache(this.xpi);
         this.truncate = 0;
@@ -321,12 +334,14 @@ var Addon = Class("Addon", {
 
     onStopRequest: function onStopRequest(request, context, status) {
         if (this.install) {
-            // Alas, without this we wind up with dead holding file
+            // Alas, without this we wind up with dead objects holding file
             // descriptors open, and Windows, with its lovely mandatory
             // file locking, refuses to delete the previous version of
             // the add-on.
+            if (!this.root.isDirectory())
+                util.flushCache(this.root);
             if (config.OS.isWindows)
-                Cu.forceGC();
+                GC();
 
             if (this.isProxy)
                 util.rehash(this.addon);
