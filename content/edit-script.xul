@@ -9,7 +9,7 @@
         title="&script.title;"
         style="min-width: 40em;"
         buttons="accept,cancel,help"
-        ondialoghelp="dialog.utilityOverlay.openUILinkIn('scriptify://locale/help/edit.xhtml#edit-script', 'tabshifted')"
+        ondialoghelp="dialog.utilityOverlay.openUILinkIn('scriptify://locale/help/edit.xhtml#edit-script', 'tab')"
         xmlns="&xmlns.xul;">
 
   <script type="application/javascript" src="edit-script.js"/>

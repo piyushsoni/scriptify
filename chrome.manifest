@@ -6,4 +6,5 @@
 # For BabelZilla. Unused. (But also shuts up the validator, yay)
 locale scriptify en-US locale/en-US/
 locale scriptify nl locale/nl/
+locale scriptify zh-CN locale/zh-CN/
 

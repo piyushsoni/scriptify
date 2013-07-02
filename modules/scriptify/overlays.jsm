@@ -1,8 +1,9 @@
 // Copyright (c) 2007-2011 by Doug Kearns <dougkearns@gmail.com>
-// Copyright (c) 2008-2011 by Kris Maglione <maglione.k@gmail.com>
+// Copyright (c) 2008-2013 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
+"use strict";
 
 var EXPORTED_SYMBOLS = ["config"];
 
@@ -24,58 +25,53 @@ lazyRequire("messages", ["_"]);
 overlay.overlayWindow(["about:addons",
                        "chrome://mozapps/content/extensions/extensions.xul"],
     Class("AddonOverlay", Overlay, {
-        before: <e4x xmlns={XUL}>
-            <toolbarbutton id="header-utils-btn">
-                <toolbarbutton id="scriptify-button" label="Scriptify"
-                               type="menu" style="margin-right: 1ex">
-                    <menupopup id="scriptify-menu">
-                        <menuitem scriptify-command="update-all"
-                                  label={_("addon.update-all.label")}
-                                  accesskey={_("addon.update-all.accesskey")}/>
-                        <menuitem scriptify-command="create"
-                                  label={_("addon.create.label")}
-                                  accesskey={_("addon.create.accesskey")}/>
-                        <menuseparator/>
-                        <menuitem scriptify-command="help"
-                                  label={_("addon.help.label")}
-                                  accesskey={_("addon.help.accesskey")}/>
-                    </menupopup>
-                </toolbarbutton>
-            </toolbarbutton>
-        </e4x>.elements(),
+        before: [
+            ["toolbarbutton", { id: "header-utils-btn", xmlns: "xul" },
+                ["toolbarbutton", { id: "scriptify-button", label: "Scriptify",
+                                    type: "menu", style: "margin-right: 1ex" },
+                    ["menupopup", { id: "scriptify-menu" },
+                        ["menuitem", { "scriptify-command": "update-all",
+                                       label: _("addon.update-all.label"),
+                                       accesskey: _("addon.update-all.accesskey") }],
+                        ["menuitem", { "scriptify-command": "create",
+                                       label: _("addon.create.label"),
+                                       accesskey: _("addon.create.accesskey") }],
+                        ["menuseparator"],
+                        ["menuitem", { "scriptify-command": "help",
+                                        label: _("addon.help.label"),
+                                        accesskey: _("addon.help.accesskey") }]]]],
+        ],
 
-        addonButton: Class.Memoize(function () (XML.ignoreWhitespace=true, DOM.fromXML(
-            <button anonid="scriptify" label={_("addon.scriptify")}
-                    class="addon-control" type="menu" xmlns={XUL}>
-                <menupopup anonid="scriptify-menu">
-                    <menuitem scriptify-command="edit"
-                              label={_("addon.edit.label")}
-                              accesskey={_("addon.edit.accesskey")}/>
-                    <menuitem scriptify-command="browse"
-                              label={_("addon.browse.label")}
-                              accesskey={_("addon.browse.accesskey")}/>
-                    <menuitem scriptify-command="export"
-                              label={_("addon.export.label")}
-                              accesskey={_("addon.export.accesskey")}/>
-                    <menuseparator/>
-                    <menuitem scriptify-command="update"
-                              label={_("addon.update.label")}
-                              accesskey={_("addon.update.accesskey")}
-                              tooltiptext={_("addon.update.tooltip")}/>
-                    <menuitem scriptify-command="refresh"
-                              label={_("addon.refresh.label")}
-                              accesskey={_("addon.refresh.accesskey")}
-                              tooltiptext={_("addon.refresh.tooltip")}/>
-                    <menuitem scriptify-command="pack"
-                              label={_("addon.pack.label")}
-                              accesskey={_("addon.pack.accesskey")}
-                              tooltiptext={_("addon.pack.tooltip")}/>
-                    <menuitem scriptify-command="unpack"
-                              label={_("addon.unpack.label")}
-                              accesskey={_("addon.unpack.accesskey")}
-                              tooltiptext={_("addon.unpack.tooltip")}/>
-                </menupopup>
-            </button>, this.doc))),
+        addonButton: Class.Memoize(function () DOM.fromJSON(
+            ["button", { anonid: "scriptify", label: _("addon.scriptify"), class: "addon-control", type: "menu", xmlns: "xul" },
+                ["menupopup", { anonid: "scriptify-menu" },
+                    ["menuitem", { "scriptify-command": "edit",
+                                    label: _("addon.edit.label"),
+                                    accesskey: _("addon.edit.accesskey") }],
+                    ["menuitem", { "scriptify-command": "browse",
+                                    label: _("addon.browse.label"),
+                                    accesskey: _("addon.browse.accesskey") }],
+                    ["menuitem", { "scriptify-command": "export",
+                                    label: _("addon.export.label"),
+                                    accesskey: _("addon.export.accesskey") }],
+                    ["menuseparator"],
+                    ["menuitem", { "scriptify-command": "update",
+                                    label: _("addon.update.label"),
+                                    accesskey: _("addon.update.accesskey"),
+                                    tooltiptext: _("addon.update.tooltip") }],
+                    ["menuitem", { "scriptify-command": "refresh",
+                                    label: _("addon.refresh.label"),
+                                    accesskey: _("addon.refresh.accesskey"),
+                                    tooltiptext: _("addon.refresh.tooltip") }],
+                    ["menuitem", { "scriptify-command": "pack",
+                                    label: _("addon.pack.label"),
+                                    accesskey: _("addon.pack.accesskey"),
+                                    tooltiptext: _("addon.pack.tooltip") }],
+                    ["menuitem", { "scriptify-command": "unpack",
+                                    label: _("addon.unpack.label"),
+                                    accesskey: _("addon.unpack.accesskey"),
+                                    tooltiptext: _("addon.unpack.tooltip") }]]],
+            this.doc)),
 
         ready: function ready(window) {
             this.addonList = this.$("#addon-list")[0];
@@ -230,14 +226,14 @@ overlay.overlayWindow(["about:addons",
 overlay.overlayWindow(["chrome://browser/content/browser.xul",
                        "chrome://navigator/content/navigator.xul"],
     Class("BrowserOverlay", Overlay, {
-        after: <e4x xmlns={XUL}>
-            <menuitem id="context-openlinkintab">
-                <menuitem id="scriptify-create-addon" key="menuItem"
-                          image={ICON_SMALL}
-                          label={_("context.scriptify-script.label")}
-                          accessskey={_("context.scriptify-script.accessskey")}/>
-            </menuitem>
-        </e4x>.elements(),
+        after: [
+            ["menuitem", { id: "context-openlinkintab", xmlns: "xul" },
+                ["menuitem", { id: "scriptify-create-addon",
+                               key: "menuItem",
+                               image: ICON_SMALL,
+                               label: _("context.scriptify-script.label"),
+                               accessskey: _("context.scriptify-script.accessskey") }]],
+        ],
 
         load: function load(window) {
             if (!config.prefs.get("first-run")) {

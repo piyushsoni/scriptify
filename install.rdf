@@ -5,7 +5,7 @@
         em:id="scriptify@dactyl.googlecode.com"
         em:name="Scriptify"
         em:type="2"
-        em:version="0.2.2"
+        em:version="0.2.4"
         em:description="Userscript add-on creator and manager."
         em:optionsURL="scriptify://content/options.xul"
         em:creator="Kris Maglione"
@@ -22,12 +22,28 @@
                 em:translator="Kris Maglione"/>
         </em:localized>
 
+        <em:localized>
+            <Description
+                em:locale="nl"
+                em:name="Scriptify"
+                em:description="Gebruikersscript-add-on-maker en -beheerder"
+                em:translator="markh van BabelZilla.org"/>
+        </em:localized>
+
+        <em:localized>
+            <Description
+                em:locale="zh-CN"
+                em:name="Scriptify"
+                em:description="用户脚本附加组件创建和管理工具。"
+                em:translator="Wang.H.K"/>
+        </em:localized>
+
         <!-- Firefox -->
         <em:targetApplication>
             <Description
                 em:id="{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-                em:minVersion="4.0"
-                em:maxVersion="11.0a1"/>
+                em:minVersion="9.0"
+                em:maxVersion="22.*"/>
         </em:targetApplication>
 
         <!-- Seamonkey -->
@@ -35,7 +51,7 @@
             <Description
                 em:id="{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}"
                 em:minVersion="2.1"
-                em:maxVersion="2.8a1"/>
+                em:maxVersion="2.9a1"/>
         </em:targetApplication>
 
         <!-- Fennec -->
@@ -43,14 +59,22 @@
             <Description
                 em:id="{a23983c0-fd0e-11dc-95ff-0800200c9a66}"
                 em:minVersion="8.0a1"
-                em:maxVersion="11.0a1"/>
+                em:maxVersion="12.0a1"/>
         </em:targetApplication>
         <!-- Fennec Native UI -->
         <em:targetApplication>
             <Description
                 em:id="{aa3c5121-dab2-40e2-81ca-7ea25febc110}"
-                em:minVersion="8.0a1"
-                em:maxVersion="11.0a1"/>
+                em:minVersion="9.0"
+                em:maxVersion="22.*"/>
+        </em:targetApplication>
+        -->
+
+        <em:targetApplication>
+            <Description
+                em:id="toolkit@mozilla.org"
+                em:minVersion="4.0"
+                em:maxVersion="22.*"/>
         </em:targetApplication>
     </Description>
 </RDF>

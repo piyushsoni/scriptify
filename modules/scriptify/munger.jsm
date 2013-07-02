@@ -2,7 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
-/* use strict */
+"use strict";
 
 var EXPORTED_SYMBOLS = ["Munger", "Script"];
 
@@ -35,7 +35,7 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
             exclude: [],
             "run-at-startup": true,
             "run-when": "ready",
-            paths: [],
+            paths: [[]],
             charset: "UTF-8",
             localized: {},
             targetApplications: Addon.getMetadata(util.newURI("resource://scriptify/install.rdf"))
@@ -113,11 +113,13 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
             this.dispatch("transferComplete", url.spec || url.path);
         this.transferQueue.length = 0;
 
+        this.metadata.paths.unshift([]);
+
         let queue = this.mungeQueue;
         this.mungeQueue = [];
         for (let script in values(queue)) {
             let uri = this.contentURI(script);
-            this.metadata.paths.unshift("content/" + script);
+            this.metadata.paths[0].push("content/" + script);
 
             let getURI = function getURI(spec) util.newURI(spec, null, uri).spec;
 
@@ -195,6 +197,7 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
             this.stager.finish(this);
         else {
             this.complete = true;
+            this.metadata.paths = array.flatten(this.metadata.paths);
             this.dispatch("complete");
         }
     }

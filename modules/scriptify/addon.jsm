@@ -2,13 +2,14 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
+"use strict";
 
 var EXPORTED_SYMBOLS = ["Addon", "ChannelStream", "Stager", "Stream"];
 
 var BOOTSTRAP_JS = "resource://scriptify/scriptified/bootstrap.js";
 
-var RDF = Namespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-var EM  = Namespace("em",  "http://www.mozilla.org/2004/em-rdf#");
+var RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+var EM  = "http://www.mozilla.org/2004/em-rdf#";
 
 var { AddonManager } = module("resource://gre/modules/AddonManager.jsm");
 
@@ -16,6 +17,7 @@ var { config } = require("config");
 var { services } = require("services");
 var { template, util } = require("util");
 
+lazyRequire("dom", ["DOM"]);
 lazyRequire("io", ["File", "io"]);
 
 var COMPRESSABLE_WHITELIST = [
@@ -35,7 +37,8 @@ function GC() {
 }
 
 var Stream = function Stream(uri) {
-    return services.io.newChannelFromURI(uri).open();
+    Cu.reportError(uri.spec);
+    return util.withProperErrors("open", services.io.newChannelFromURI(uri));
 };
 
 // Hack
@@ -86,7 +89,7 @@ var Stager = Class("Stager", StagerBase, {
 
         if (xpi.exists() && xpi.isDirectory())
             return BastardStagerFromHell(xpi);
-        this.xpi = xpi;
+        this.xpi = File(xpi);
 
         this.truncate = truncate ? File.MODE_TRUNCATE : 0;
     },
@@ -97,7 +100,7 @@ var Stager = Class("Stager", StagerBase, {
     },
 
     writer: Class.Memoize(function ()
-        services.ZipWriter(this.xpi,
+        services.ZipWriter(this.xpi.file,
                            File.MODE_RDWR | (this.xpi.exists() ? this.truncate : File.MODE_CREATE))),
 
     compression: 9,
@@ -109,7 +112,7 @@ var Stager = Class("Stager", StagerBase, {
             if (this.writer.hasEntry(path))
                 this.writer.removeEntry(path, true);
 
-            if (obj instanceof Ci.nsIFile)
+            if (obj instanceof Ci.nsIFile || obj instanceof File)
                 obj = File(obj).URI;
 
             if (obj instanceof Ci.nsIURI) {
@@ -145,7 +148,7 @@ var Stager = Class("Stager", StagerBase, {
         for (let [path, obj] in Iterator(this.queue || {}))
             if (obj instanceof Ci.nsIInputStream)
                 this.writer.addEntryStream(path, 0, this.getLevel(path), obj, true);
-            else if (obj instanceof Ci.nsIFile)
+            else if (obj instanceof Ci.nsIFile || obj instanceof File)
                 this.writer.addEntryFile(path, this.getLevel(path), obj, true);
 
         this.listener = listener;
@@ -257,12 +260,12 @@ var Addon = Class("Addon", {
             root = util.getFile(uri);
         else if (root.getResourceURI) {
             this.addon = root;
-            root = File(root.getResourceURI(""));
+            root = root.getResourceURI("");
         }
 
         this.rename = {};
         this.remove = {};
-        this.root = root;
+        this.root = File(root);
 
         this.update(updates);
     },
@@ -283,7 +286,7 @@ var Addon = Class("Addon", {
     restage: function restage(xpi, listener) {
         let { isProxy } = this;
 
-        if (xpi instanceof Ci.nsIFile)
+        if (xpi instanceof Ci.nsIFile || xpi instanceof File)
             this.xpi = xpi;
         else {
             this.listener = listener;
@@ -291,9 +294,8 @@ var Addon = Class("Addon", {
             if (isProxy)
                 this.xpi = this.root;
             else
-                this.xpi = io.createTempFile(File(this.root.parent)
-                                                .child(this.root.leafName
-                                                           .replace(/(\.xpi)?$/, ".xpi")),
+                this.xpi = io.createTempFile(this.root.leafName
+                                                 .replace(/(\.xpi)?$/, ".xpi"),
                                              "file");
 
             listener = this;
@@ -345,9 +347,23 @@ var Addon = Class("Addon", {
 
             if (this.isProxy)
                 util.rehash(this.addon);
-            else
-                AddonManager.getInstallForFile(this.xpi, this.closure.installInstaller,
+            else {
+                if (config.OS.isWindows) {
+                    let { id } = this.metadata;
+                    let dir = File(services.directory.get("ProfD", Ci.nsIFile))
+                                    .child("extensions/trash");
+
+                    for each (let ext in [".xpi", ""]) {
+                        let file = dir.child(id + ext);
+                        if (file.exists())
+                            try { file.remove(true); } catch (e) {}
+                        if (file.exists())
+                            try { file.moveTo(file.parent, Date.now() + file.leafName) } catch (e) {}
+                    }
+                }
+                AddonManager.getInstallForFile(this.xpi.file, this.closure.installInstaller,
                                                "application/x-xpinstall");
+            }
 
             if (this.listener && this.listener.onStopRequest)
                 util.trapErrors("onStopRequest", this.listener, request, context, status);
@@ -393,7 +409,7 @@ var Addon = Class("Addon", {
         if (this.root.isDirectory())
             rec(this.root, "");
         else {
-            let jar = services.ZipReader(this.root);
+            let jar = services.ZipReader(this.root.file);
             try {
                 res = iter(jar.findEntries("*")).toArray();
             }
@@ -458,58 +474,49 @@ var Addon = Class("Addon", {
     },
 
     InstallRDF: function InstallRDF(metadata, unpack) {
-        let rdf = <RDF xmlns={RDF} xmlns:em={EM}>
-            <Description about="urn:mozilla:install-manifest">
-                <em:type>2</em:type>
-                <em:id>{metadata.id}</em:id>
-                <em:name>{metadata.name}</em:name>
-                <em:version>{metadata.version}</em:version>
-                <em:unpack>{!!(unpack != null ? unpack : metadata.unpack)}</em:unpack>
-                <em:bootstrap>true</em:bootstrap>
+        let rdf = ["RDF", { xmlns: RDF, "xmlns:em": EM },
+            ["Description", { about: "urn:mozilla:install-manifest" },
+                ["em:type", {}, 2],
+                ["em:id", {}, metadata.id],
+                ["em:name", {}, metadata.name],
+                ["em:version", {}, metadata.version],
+                ["em:unpack", {}, !!(unpack != null ? unpack : metadata.unpack)],
+                ["em:bootstrap", {}, true],
 
-                { template.map(["creator", "description", "homepageURL",
+                template.map(["creator", "description", "homepageURL",
                                 "updateURL", "updateKey",
                                 "optionsType", "optionsURL"],
-                    function (key) metadata[key] ? <em:{key} xmlns:em={EM}>{metadata[key]}</em:{key}>
-                                                 : undefined) }
+                    function (key) metadata[key] ? ["em:" + key, {}, metadata[key]]
+                                                 : undefined),
 
-                { template.map(metadata.developers || [], function (name)
-                    <em:developer xmlns:em={EM}>{name}</em:developer>) }
+                template.map(metadata.developers || [], function (name)
+                    ["em:developer", {}, name]),
 
-                { template.map(metadata.contributors || [], function (name)
-                    <em:contributor xmlns:em={EM}>{name}</em:contributor>) }
+                template.map(metadata.contributors || [], function (name)
+                    ["em:contributor", {}, name]),
 
-                { template.map(Iterator(metadata.localized), function ([id, attr])
-                <em:localized xmlns={RDF} xmlns:em={EM}>
-                    <Description>
-                        <em:locale>{id}</em:locale>
-                        { template.map(Iterator(attr), function ([key, val]) {
-                                let singular = key.replace(/s$/, "");
-                                if (isArray(val))
-                                    return template.map(val, function (val)
-                                           <em:{singular} xmlns:em={EM}>{val}</em:{singular}>);
-                                if (val)
-                                    return <em:{key} xmlns:em={EM}>{metadata[key]}</em:{key}>;
-                          })
-                        }
-                    </Description>
-                </em:localized>) }
+                template.map(Iterator(metadata.localized), function ([id, attr])
+                    ["em:localized", {},
+                        ["Description", {},
+                            ["em:locale", {}, id,
+                                template.map(Iterator(attr), function ([key, val]) {
+                                    let singular = key.replace(/s$/, "");
+                                    if (isArray(val))
+                                        return template.map(val, function (val)
+                                               ["em:" + singular, {}, val]);
+                                    if (val)
+                                        return ["em:" + key, {}, metadata[key]];
+                              })]]]),
 
-                { template.map(metadata.targetApplications, function ([id, attr])
-                <em:targetApplication xmlns={RDF} xmlns:em={EM}>
-                    <Description>
-                        <em:id>{id}</em:id>
-                        <em:minVersion>{attr.minVersion}</em:minVersion>
-                        <em:maxVersion>{attr.maxVersion}</em:maxVersion>
-                    </Description>
-                </em:targetApplication>) }
-            </Description>
-        </RDF>;
+                template.map(metadata.targetApplications, function ([id, attr])
+                    ["em:targetApplication", {},
+                        ["Description", {},
+                            ["em:id", {}, id],
+                            ["em:minVersion", {}, attr.minVersion],
+                            ["em:maxVersion", {}, attr.maxVersion]]])
+        ]];
 
-        XML.prettyPrinting = true;
-        XML.ignoreWhitespace = true;
-        XML.prettyIndent = 4;
         return '<?xml version="1.0" encoding="UTF-8"?>\n' +
-               rdf.toXMLString().replace(/>\n +\n/g, ">\n");
+               DOM.toPrettyXML(rdf, true);
     }
 });

@@ -34,10 +34,16 @@ try {
 
     const Services = Object.create(module("resource://gre/modules/Services.jsm").Services);
     XPCOMUtils.defineLazyServiceGetter(Services, "clipboard", "@mozilla.org/widget/clipboardhelper;1", "nsIClipboardHelper");
-    XPCOMUtils.defineLazyServiceGetter(Services, "messageManager", "@mozilla.org/globalmessagemanager;1", "nsIChromeFrameMessageManager");
+    XPCOMUtils.defineLazyServiceGetter(Services, "messageManager", "@mozilla.org/globalmessagemanager;1", "nsISupports");
     XPCOMUtils.defineLazyServiceGetter(Services, "mime", "@mozilla.org/mime;1", "nsIMIMEService");
     XPCOMUtils.defineLazyServiceGetter(Services, "security", "@mozilla.org/scriptsecuritymanager;1", "nsIScriptSecurityManager");
     XPCOMUtils.defineLazyServiceGetter(Services, "tld", "@mozilla.org/network/effective-tld-service;1", "nsIEffectiveTLDService");
+
+    ["nsIFrameScriptLoader",
+     "nsIMessageBroadcaster",
+     "nsIMessageListenerManager"].forEach(function (iface) {
+         Services.messageManager.QueryInterface(Ci[iface]);
+    });
 
     const resourceProto = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
 
@@ -58,16 +64,20 @@ try {
         this.win = sandbox.window;
         this.doc = sandbox.window.document;
 
-        Cu.evalInSandbox(GM_makeDOM, sandbox, "1.8",
-                         Components.stack.filename, GM_makeDOM_line);
+        sandbox.XPathResult = Ci.nsIDOMXPathResult;
 
         if (!API.ready) {
             API.ready = true;
             for each (let path in manager.config.api || [])
-                Services.scriptloader.loadSubScript(
-                    manager.getResourceURI(path).spec,
-                    API.prototype,
-                    manager.config.charset);
+                try {
+                    Services.scriptloader.loadSubScript(
+                        manager.getResourceURI(path).spec,
+                        API.prototype,
+                        manager.config.charset);
+                }
+                catch (e) {
+                    reportError(e);
+                }
         }
 
         Object.keys(API.prototype).forEach(function (meth) {
@@ -81,47 +91,6 @@ try {
                 }, "GM_" + meth);
         });
     }
-
-        /**
-         * Generates DOM nodes from the given E4X XML literal.
-         *
-         * Note that because it is currently impossible to pass E4X
-         * objects across compartment boundaries, this function must be
-         * injected into sandboxes directly.
-         *
-         * @param {xml} xml The XML literal to convert.
-         * @param {object} nodes If present, created elements with a "key"
-         *      attribute will be stored as properties of this object.
-         *      @optional
-         */
-        let GM_makeDOM_line = Components.stack.lineNumber + 1;
-        let GM_makeDOM = '\n\
-        default xml namespace = Namespace("html", "http://www.w3.org/1999/xhtml");           \n\
-        function GM_makeDOM(xml, nodes) {                                                    \n\
-           if (xml.length() != 1) {                                                          \n\
-               let domnode = document.createDocumentFragment();                              \n\
-               for each (let child in xml)                                                   \n\
-                   domnode.appendChild(GM_makeDOM(child, nodes));                            \n\
-               return domnode;                                                               \n\
-           }                                                                                 \n\
-           switch (xml.nodeKind()) {                                                         \n\
-           case "text":                                                                      \n\
-               return document.createTextNode(String(xml));                                  \n\
-           case "element":                                                                   \n\
-               let domnode = document.createElementNS(xml.namespace(), xml.localName());     \n\
-               for each (let attr in xml.@*::*)                                              \n\
-                   domnode.setAttributeNS(attr.namespace(), attr.localName(), String(attr)); \n\
-                                                                                             \n\
-               for each (let child in xml.*::*)                                              \n\
-                   domnode.appendChild(GM_makeDOM(child, nodes));                            \n\
-               if (nodes && "@key" in xml)                                                   \n\
-                   nodes[xml.@key] = domnode;                                                \n\
-               return domnode;                                                               \n\
-           default:                                                                          \n\
-               return null;                                                                  \n\
-           }                                                                                 \n\
-        }                                                                                    \n\
-        ';
 
     API.prototype = {
         __proto__: { Cc: Cc, Ci: Ci, Cr: Cr, Cu: Cu, Services: Services,
@@ -715,7 +684,7 @@ try {
         manager = this;
         this.prefs = prefs.Branch("extensions." + addon.id + ".");
 
-        this.package = addon.id.replace("@", ".");
+        this.package = addon.id.replace("@", ".").toLowerCase();
 
         resourceProto.setSubstitution(this.package, baseURI);
 
@@ -783,7 +752,6 @@ try {
         },
 
         makeSandbox: wrap(function makeSandbox(window, script) {
-
             if (script["run-when"] in this.states) {
                 let [states, target, delay] = this.states[script["run-when"]];
 
@@ -816,6 +784,8 @@ try {
 
             let api = new API(sandbox, script);
 
+            Services.obs.notifyObservers(sandbox, "scriptify:sandbox-created", addon.id);
+
             for each (let path in script.paths)
                 try {
                     Services.scriptloader.loadSubScript(
@@ -823,7 +793,10 @@ try {
                         sandbox,
                         script.charset || this.config.charset);
                 }
-                catch (e if e instanceof Finished) {}
+                catch (e) {
+                    if (!(e instanceof Finished))
+                        reportError(e);
+                }
 
         })
     };
@@ -847,7 +820,7 @@ try {
         cleanup: function cleanup() {
             SlaveDriver.super.cleanup.call(this);
 
-            Services.messageManager.sendAsyncMessage(messages.event, { event: "cleanup" });
+            Services.messageManager.broadcastAsyncMessage(messages.event, { event: "cleanup" });
 
             Services.messageManager.removeMessageListener(messages.prefs, this);
             Services.messageManager.removeMessageListener(this.slaveURI, this);
