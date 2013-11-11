@@ -1,5 +1,5 @@
 /*
- * Copyright © 2009-2011 Kris Maglione <maglione.k@gmail.com>
+ * Copyright © 2009-2013 Kris Maglione <maglione.k@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -39,11 +39,14 @@ try {
     XPCOMUtils.defineLazyServiceGetter(Services, "security", "@mozilla.org/scriptsecuritymanager;1", "nsIScriptSecurityManager");
     XPCOMUtils.defineLazyServiceGetter(Services, "tld", "@mozilla.org/network/effective-tld-service;1", "nsIEffectiveTLDService");
 
-    ["nsIFrameScriptLoader",
-     "nsIMessageBroadcaster",
-     "nsIMessageListenerManager"].forEach(function (iface) {
-         Services.messageManager.QueryInterface(Ci[iface]);
-    });
+    try { Services.messageManager } catch (e) {}
+
+    if (Services.messageManager)
+        ["nsIFrameScriptLoader",
+         "nsIMessageBroadcaster",
+         "nsIMessageListenerManager"].forEach(function (iface) {
+             Services.messageManager.QueryInterface(Ci[iface]);
+        });
 
     const resourceProto = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
 

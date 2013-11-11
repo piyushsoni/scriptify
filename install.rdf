@@ -5,7 +5,7 @@
         em:id="scriptify@dactyl.googlecode.com"
         em:name="Scriptify"
         em:type="2"
-        em:version="0.2.4"
+        em:version="0.2.5"
         em:description="Userscript add-on creator and manager."
         em:optionsURL="scriptify://content/options.xul"
         em:creator="Kris Maglione"
