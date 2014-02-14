@@ -947,8 +947,7 @@ try {
 
             // The Message manager on Gecko <8.0 won't accept message listeners
             // from sandbox compartments.
-            if (Services.vc.compare(Services.appinfo.platformVersion, "10.*") < 0
-                    && Services.appinfo.name != "Fennec")
+            if (!prefs.get("browser.tabs.remote"))
                 manager = new GlobalManager;
             else
                 manager = new SlaveDriver;
