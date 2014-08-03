@@ -1,4 +1,4 @@
-// Copyright (c) 2011 by Kris Maglione <maglione.k@gmail.com>
+// Copyright (c) 2011-2014 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
@@ -315,7 +315,7 @@ var Addon = Class("Addon", {
             if (this.xpi.exists())
                 this.xpi.remove(true);
 
-            for each (let file in this.contents)
+            for (let file of this.contents)
                 if (!Set.has(this.remove, file))
                     stager.add(Set.has(this.rename, file) ? this.rename[file] : file,
                                this.getResourceURI(file));
@@ -353,7 +353,7 @@ var Addon = Class("Addon", {
                     let dir = File(services.directory.get("ProfD", Ci.nsIFile))
                                     .child("extensions/trash");
 
-                    for each (let ext in [".xpi", ""]) {
+                    for (let ext of [".xpi", ""]) {
                         let file = dir.child(id + ext);
                         if (file.exists())
                             try { file.remove(true); } catch (e) {}
@@ -435,15 +435,15 @@ var Addon = Class("Addon", {
 
         function stuff(resource) {
             let metadata = {};
-            for each (let key in ["bootstrap", "unpack"])
+            for (let key of ["bootstrap", "unpack"])
                 metadata[key] = literal(resource, key) == "true";
 
-            for each (let key in ["aboutURL", "creator", "description", "homepageURL",
-                                  "icon64URL", "iconURL", "id", "name", "optionsType",
-                                  "optionsURL", "updateKey", "updateURL", "version"])
+            for (let key of ["aboutURL", "creator", "description", "homepageURL",
+                             "icon64URL", "iconURL", "id", "name", "optionsType",
+                             "optionsURL", "updateKey", "updateURL", "version"])
                 metadata[key] = literal(resource, key);
 
-            for each (let key in ["contributor", "developer", "targetPlatform", "translator"])
+            for (let key of ["contributor", "developer", "targetPlatform", "translator"])
                 metadata[key + "s"] = iter(rdf.GetTargets(resource, em(key), true), Ci.nsIRDFLiteral)
                     .map(function (target) target.Value)
                     .toArray();

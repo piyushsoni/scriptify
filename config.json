@@ -1,6 +1,13 @@
 {
     "name": "scriptify",
 
+    "resources": {
+        "scriptify":	     "./",
+        "scriptify-content": "content/",
+
+        "scriptify-locale":  "locale/"
+    },
+
     "module-paths": [
         "resource://scriptify/modules/scriptify/",
         "resource://scriptify/modules/common/",

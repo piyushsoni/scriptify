@@ -46,7 +46,7 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
 
         this.stager = Stager(this.root, truncate);
 
-        for each (let url in Array.concat(urls))
+        for (let url of Array.concat(urls))
             this.processScript(url);
 
         this.stager.finish(this);

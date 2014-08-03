@@ -1,5 +1,5 @@
 /*
- * Copyright © 2009-2013 Kris Maglione <maglione.k@gmail.com>
+ * Copyright © 2009-2014 Kris Maglione <maglione.k@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -86,8 +86,8 @@ try {
         Object.keys(API.prototype).forEach(function (meth) {
             if (meth[0] != "_")
                 sandbox.importFunction(function wrapper() {
-                    let caller = Components.stack.caller.caller.filename;
-                    if (!/^resource:/.test(caller.replace(/.* -> /, "")))
+                    let caller = Components.stack.caller.filename;
+                    if (!caller || !/^resource:/.test(caller.replace(/.* -> /, "")))
                         throw Error("Permission denied for <" + caller + "> to call method GM_" + meth)
 
                     return api[meth].apply(api, arguments);
@@ -249,6 +249,7 @@ try {
          */
         xmlhttpRequest: function xmlhttpRequest(params) {
             let self = this;
+            let unsafeParams = Cu.waiveXrays(params);
             let uri = util.newURI(params.url);
 
             if (!~["ftp", "http", "https"].indexOf(uri.scheme))
@@ -258,10 +259,10 @@ try {
                                      params.user, params.password);
 
             ["load", "error", "readystatechange"].forEach(function (event) {
-                if ("on" + event in params)
-                    xhr.addEventListener(event, function () {
-                        params["on" + event](sanitizeRequest(this, self.sandbox));
-                    }, false);
+                if ("on" + event in unsafeParams)
+                    xhr.addEventListener(event, wrap(function () {
+                        unsafeParams["on" + event](sanitizeRequest(this, self.sandbox));
+                    }));
             });
 
             for (let [k, v] in Iterator(params.headers || {}))

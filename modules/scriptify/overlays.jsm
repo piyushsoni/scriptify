@@ -1,5 +1,5 @@
 // Copyright (c) 2007-2011 by Doug Kearns <dougkearns@gmail.com>
-// Copyright (c) 2008-2013 by Kris Maglione <maglione.k@gmail.com>
+// Copyright (c) 2008-2014 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
@@ -154,7 +154,7 @@ overlay.overlayWindow(["about:addons",
         },
 
         repackAddons: function repackAddons(addons) {
-            for each (let addon in addons)
+            for (let addon of addons)
                 Addon(addon).restage();
         },
 
@@ -194,7 +194,7 @@ overlay.overlayWindow(["about:addons",
         onPopupShowing: function onPopupShowing(item, event) {
             let packed = item.mAddon.getResourceURI(".") instanceof Ci.nsIJARURI;
             let proxied = Addon(item.mAddon).isProxy;
-            for each (let command in ["pack", "unpack"]) {
+            for (let command of ["pack", "unpack"]) {
                 let cmd = DOM(item).findAnon("scriptify-command", command)
                                    .attr("hidden", (command == "unpack") ^ packed);
                 if (proxied)
