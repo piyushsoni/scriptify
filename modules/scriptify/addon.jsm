@@ -263,8 +263,8 @@ var Addon = Class("Addon", {
             root = root.getResourceURI("");
         }
 
-        this.rename = {};
-        this.remove = {};
+        this.rename = new Map();
+        this.remove = new Set();
         this.root = File(root);
 
         this.update(updates);
@@ -304,20 +304,23 @@ var Addon = Class("Addon", {
         let stager = Stager(this.xpi);
 
         if (isProxy)
-            for (let path in keys(this.remove)) {
+            for (let path of this.remove) {
                 let file = this.root.child(path);
                 if (!/^\.\.(\/|\\|$)/.test(file.getRelativeDescriptor(this.root)))
                     // Paranoia yay.
                     file.remove(true);
             }
         else {
+            if (!this.root.isDirectory())
+                util.flushCache(this.root.file);
+
             util.flushCache(this.xpi);
             if (this.xpi.exists())
                 this.xpi.remove(true);
 
             for (let file of this.contents)
-                if (!Set.has(this.remove, file))
-                    stager.add(Set.has(this.rename, file) ? this.rename[file] : file,
+                if (!this.remove.has(file))
+                    stager.add(this.rename.has(file) ? this.rename.get(file) : file,
                                this.getResourceURI(file));
         }
 

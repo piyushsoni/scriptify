@@ -1,4 +1,4 @@
-// Copyright (c) 2011 by Kris Maglione <maglione.k@gmail.com>
+// Copyright (c) 2011-2014 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
@@ -15,7 +15,7 @@ lazyRequire("messages", ["_"]);
 
 let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
     init: function init(root, urls, callbacks, truncate) {
-        this.processed = {};
+        this.processed = new Set();
         this.mungeQueue = [];
         this.transferQueue = [];
         this.callbacks = callbacks;
@@ -72,7 +72,7 @@ let Munger = Class("Munger", XPCOM(Ci.nsIRequestObserver), {
         if (isString(uri))
             uri = util.newURI(uri);
 
-        if (Set.add(this.processed, uri.spec))
+        if (this.processed.add(uri.spec))
             return;
 
         this.dispatch("transferStarted", uri.spec, target);

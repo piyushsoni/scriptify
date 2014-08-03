@@ -1,4 +1,4 @@
-// Copyright (c) 2011 by Kris Maglione <maglione.k@gmail.com>
+// Copyright (c) 2011-2014 by Kris Maglione <maglione.k@gmail.com>
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the LICENSE file included with this file.
@@ -29,8 +29,7 @@ var dialog = Dialog(window, {
 
     validators: {
         name: util.identity,
-        charset: function (name) !name || let ({ charset } = services)
-                    charset.getCharsetTitle(charset.getCharsetAlias(name)),
+        charset: function (name) !name || new TextDecoder(name),
         include: function (str) str && Munger.validateMatcher(str),
         exclude: Munger.validateMatcher
     },
