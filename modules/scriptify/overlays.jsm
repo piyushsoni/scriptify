@@ -239,7 +239,9 @@ overlay.overlayWindow(["chrome://browser/content/browser.xul",
             if (!config.prefs.get("first-run")) {
                 config.prefs.set("first-run", config.addon.version);
 
-                window.gBrowser.loadOneTab(HELP_URL, { inBackground: false });
+                window.setTimeout(() => {
+                    window.gBrowser.loadOneTab(HELP_URL, { inBackground: false });
+                }, 1000);
             }
         },
 
