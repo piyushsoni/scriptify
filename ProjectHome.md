@@ -1,0 +1,1 @@
+Scriptify allows you to easily create and manage restartless add-ons made from Scriptish and Greasemonkey userscripts. Once you've created an add-on, Scriptify makes it easy for you to manage it, and can automatically update it to maintain compatibility with Firefox rolling releases.
